@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Isaac Blocks: Master Edition</title>
+    <style>
+        :root { --bg: #0a0a0a; --paper: #e0d8c3; --ink: #2b2b2b; --accent: #ff4d4d; }
+        body { 
+            display: flex; flex-direction: column; justify-content: center; align-items: center; 
+            height: 100vh; margin: 0; background-color: #000; color: #eee; 
+            font-family: 'Segoe UI', Tahoma, sans-serif; overflow: hidden; touch-action: none;
+        }
+        
+        /* MENU DE PERSONAGENS */
+        #menu {
+            position: absolute; inset: 0; background: radial-gradient(circle, #222, #050505);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+        #menu h1 { font-size: 40px; color: #fff; margin-bottom: 20px; text-shadow: 3px 3px #a22; letter-spacing: 3px; }
+        .char-container { display: flex; gap: 15px; padding: 10px; }
+        .char-card {
+            background: var(--paper); color: var(--ink); width: 130px; padding: 15px;
+            border-radius: 5px; border: 3px solid #000; text-align: center;
+            box-shadow: 6px 6px 0 rgba(0,0,0,0.5); cursor: pointer; transition: 0.2s;
+        }
+        .char-card:active { transform: translateY(5px); box-shadow: 2px 2px 0 rgba(0,0,0,0.5); }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #000; margin: 0 auto 10px; }
+        .char-card h3 { margin: 0; font-size: 16px; border-bottom: 2px solid #000; padding-bottom: 5px; }
+        .char-card p { font-size: 11px; font-weight: bold; margin: 8px 0 0; text-align: left; }
+
+        /* UI DO JOGO */
+        #ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 100; }
+        #item-banner {
+            position: absolute; top: -150px; left: 50%; transform: translateX(-50%);
+            background: #fff; color: #000; border: 4px solid #000; padding: 10px 40px;
+            text-align: center; transition: top 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+        #item-banner.show { top: 30px; }
+
+        canvas { border: 4px solid #222; background: #000; max-width: 100vw; max-height: 60vh; }
+
+        /* CONTROLES MOBILE */
+        .controls {
+            position: absolute; bottom: 20px; width: 100%; height: 160px;
+            display: flex; justify-content: space-between; padding: 0 30px; box-sizing: border-box;
+            z-index: 500;
+        }
+        .joy-base { width: 110px; height: 110px; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); border-radius: 50%; position: relative; }
+        .joy-knob { width: 44px; height: 44px; background: #555; border-radius: 50%; position: absolute; left: 33px; top: 33px; pointer-events: none; }
+        #btn-q { width: 55px; height: 55px; background: #222; border: 2px solid #444; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; align-self: center; pointer-events: auto; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="menu">
+        <h1>ISAAC BLOCKS</h1>
+        <div class="char-container">
+            <div class="char-card" onclick="initGame('isaac')">
+                <div class="avatar" style="background:#fff"></div>
+                <h3>ISAAC</h3><p>HP: 3<br>DMG: 1.2<br>SPD: 4.5</p>
+            </div>
+            <div class="char-card" onclick="initGame('maggy')">
+                <div class="avatar" style="background:#ffb3ba"></div>
+                <h3>MAGGY</h3><p>HP: 4<br>DMG: 1.0<br>SPD: 3.5</p>
+            </div>
+            <div class="char-card" onclick="initGame('azazel')">
+                <div class="avatar" style="background:#333; border:2px solid #a22;"></div>
+                <h3>AZAZEL</h3><p>HP: 3<br>DMG: 2.5<br>FLY: YES</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-layer" class="hidden">
+        <div id="item-banner">
+            <h2 id="it-name" style="margin:0">ITEM!</h2>
+            <p id="it-stat" style="margin:0; font-weight:bold; color: #a22;">STATS UP</p>
+        </div>
+    </div>
+
+    <canvas id="gameCanvas" width="900" height="600" class="hidden"></canvas>
+
+    <div class="controls hidden" id="ui-controls">
+        <div class="joy-base" id="joy-move"><div class="joy-knob" id="knob-move"></div></div>
+        <div id="btn-q" onclick="if(player) player.switchWep()">Q</div>
+        <div class="joy-base" id="joy-shoot"><div class="joy-knob" id="knob-shoot"></div></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const TILE = 50, WORLD_X = 150;
+        const GRID_W = 18, GRID_H = 12;
+
+        let player, enemies = [], projectiles = [], upgrade = null, particles = [];
+        let game = { floor: 1, active: false, palette: null };
+
+        const PALETTES = {
+            1: { floor: "#1a1a1a", rock: "#555", name: "BASEMENT", accent: "#ff4d4d" },
+            6: { floor: "#0a1a2a", rock: "#3a5a7a", name: "CAVES", accent: "#4d94ff" },
+            11: { floor: "#1a0505", rock: "#4a0505", name: "DEPTHS", accent: "#a22" }
+        };
+
+        const ITEMS = [
+            { n: "SAD ONION", s: "TEARS UP", f: (p) => p.fireRate = Math.max(5, p.fireRate-4) },
+            { n: "PENTAGRAM", s: "DMG UP", f: (p) => p.dmg += 0.8 },
+            { n: "THE BELT", s: "SPEED UP", f: (p) => p.speed += 0.8 },
+            { n: "INNER EYE", s: "TRIPLE SHOT", f: (p) => p.triple = true },
+            { n: "THE WAFER", s: "RESISTANCE", f: (p) => p.wafer = true }
+        ];
+
+        // --- CONTROLES MULTI-TOUCH ---
+        const moveIn = { x: 0, y: 0, id: null };
+        const shootIn = { x: 0, y: 0, id: null };
+
+        function setupJoy(baseId, knobId, input) {
+            const base = document.getElementById(baseId);
+            const knob = document.getElementById(knobId);
+            const limit = 45;
+
+            const handle = (t) => {
+                const rect = base.getBoundingClientRect();
+                const dx = t.clientX - (rect.left + rect.width/2);
+                const dy = t.clientY - (rect.top + rect.height/2);
+                const d = Math.sqrt(dx*dx + dy*dy);
+                const r = Math.min(d, limit) / d;
+                knob.style.transform = `translate(${dx*r}px, ${dy*r}px)`;
+                input.x = (dx*r)/limit; input.y = (dy*r)/limit;
+            };
+
+            base.addEventListener('touchstart', (e) => {
+                for(let t of e.changedTouches) if(input.id === null) { input.id = t.identifier; handle(t); }
+            }, {passive:false});
+            base.addEventListener('touchmove', (e) => {
+                for(let t of e.changedTouches) if(t.identifier === input.id) handle(t);
+            }, {passive:false});
+            base.addEventListener('touchend', (e) => {
+                for(let t of e.changedTouches) if(t.identifier === input.id) {
+                    input.id = null; input.x = 0; input.y = 0; knob.style.transform = `translate(0,0)`;
+                }
+            }, {passive:false});
+        }
+
+        // --- CLASSES ---
+        class Player {
+            constructor(c) {
+                this.x = 525; this.y = 300; this.hp = c.hp; this.max = c.hp;
+                this.speed = c.speed; this.dmg = c.dmg; this.fireRate = c.fireRate;
+                this.color = c.color; this.wep = c.wep; this.fly = c.fly;
+                this.cd = 0; this.inv = 0; this.triple = false; this.wafer = false;
+            }
+            update() {
+                if(this.inv > 0) this.inv--;
+                let nx = this.x + moveIn.x * this.speed;
+                let ny = this.y + moveIn.y * this.speed;
+                if(!isObstacle(nx, this.y)) this.x = nx;
+                if(!isObstacle(this.x, ny)) this.y = ny;
+
+                if(this.cd > 0) this.cd--;
+                if(Math.hypot(shootIn.x, shootIn.y) > 0.5 && this.cd <= 0) {
+                    this.fire(); this.cd = this.fireRate;
+                }
+            }
+            fire() {
+                const a = Math.atan2(shootIn.y, shootIn.x);
+                if(this.wep === 'laser') return;
+                const angles = this.triple ? [a-0.2, a, a+0.2] : [a];
+                angles.forEach(ang => projectiles.push(new Projectile(this.x, this.y, ang, this.dmg)));
+            }
+            takeDmg(n) {
+                if(this.inv > 0) return;
+                this.hp -= (this.wafer ? 0.5 : n); this.inv = 60;
+                if(this.hp <= 0) location.reload();
+            }
+            draw() {
+                ctx.save();
+                ctx.fillStyle = "rgba(0,0,0,0.3)";
+                ctx.beginPath(); ctx.ellipse(this.x, this.y+15, 15, 8, 0, 0, Math.PI*2); ctx.fill();
+                if(this.inv > 0 && Math.floor(Date.now()/80)%2==0) ctx.globalAlpha = 0.2;
+                let g = ctx.createRadialGradient(this.x-5, this.y-5, 2, this.x, this.y, 18);
+                g.addColorStop(0, this.color); g.addColorStop(1, "#333");
+                ctx.fillStyle = g; ctx.beginPath(); ctx.arc(this.x, this.y, 18, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = "#000";
+                let ex = moveIn.x*4, ey = moveIn.y*4;
+                ctx.beginPath(); ctx.arc(this.x-7+ex, this.y-2+ey, 3, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(this.x+7+ex, this.y-2+ey, 3, 0, Math.PI*2); ctx.fill();
+                if(this.wep === 'laser' && Math.hypot(shootIn.x, shootIn.y) > 0.5) {
+                    ctx.strokeStyle = "rgba(255,0,0,0.8)"; ctx.lineWidth = 12; ctx.shadowBlur = 15; ctx.shadowColor = "red";
+                    ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(this.x+shootIn.x*1000, this.y+shootIn.y*1000); ctx.stroke();
+                    ctx.shadowBlur = 0;
+                }
+                ctx.restore();
+            }
+        }
+
+        class Projectile {
+            constructor(x, y, a, d) { this.x = x; this.y = y; this.vx = Math.cos(a)*9; this.vy = Math.sin(a)*9; this.dmg = d; this.life = 80; }
+            update() { this.x += this.vx; this.y += this.vy; this.life--; }
+            draw() { ctx.fillStyle = "#fff"; ctx.shadowBlur = 10; ctx.shadowColor = "#5cf"; ctx.beginPath(); ctx.arc(this.x, this.y, 7, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0; }
+        }
+
+        class Enemy {
+            constructor(x, y, boss = false) { 
+                this.x = x; this.y = y; this.boss = boss; 
+                this.hp = boss?60:4; this.size = boss?50:20; this.delay = 90; 
+            }
+            update() {
+                if(this.delay > 0) { this.delay--; return; }
+                let d = Math.hypot(player.x - this.x, player.y - this.y);
+                this.x += ((player.x - this.x)/d)*1.8; this.y += ((player.y - this.y)/d)*1.8;
+            }
+            draw() {
+                let pulse = Math.sin(Date.now()/150)*4;
+                ctx.fillStyle = this.delay > 0 ? "#444" : (this.boss ? "#811" : "#a33");
+                ctx.fillRect(this.x-this.size, this.y-this.size+pulse, this.size*2, this.size*2-pulse);
+            }
+        }
+
+        // --- MAPA E COLISÃO ---
+        function isObstacle(x, y) {
+            let gx = Math.floor(x/TILE), gy = Math.floor(y/TILE);
+            if(gx < 3 || gx >= GRID_W-1 || gy < 1 || gy >= GRID_H-1) {
+                if(enemies.length === 0 && Math.abs(x - 525) < 40) return false;
+                return true;
+            }
+            if(currentMap[gy][gx] === 1) return true;
+            if(currentMap[gy][gx] === 2 && !player.fly) { player.takeDmg(0.5); player.x = 525; player.y = 300; return true; }
+            return false;
+        }
+
+        function generateMap() {
+            currentMap = [];
+            for(let y=0; y<GRID_H; y++) {
+                currentMap[y] = [];
+                for(let x=0; x<GRID_W; x++) {
+                    if(x<3 || x==GRID_W-1 || y==0 || y==GRID_H-1) currentMap[y][x] = 1;
+                    else {
+                        let r = Math.random();
+                        if (r < 0.08) currentMap[y][x] = 1; // Rock
+                        else if (r < 0.12) currentMap[y][x] = 2; // Pit
+                        else if (r < 0.15) currentMap[y][x] = 4; // Fire
+                        else currentMap[y][x] = 0;
+                    }
+                }
+            }
+            for(let i=5; i<=7; i++) for(let j=9; j<=11; j++) currentMap[i][j] = 0;
+        }
+
+        function drawMap() {
+            ctx.fillStyle = game.palette.floor; ctx.fillRect(150,0,750,600);
+            for(let y=0; y<GRID_H; y++) for(let x=3; x<GRID_W; x++) {
+                let t = currentMap[y][x], xp = x*50, yp = y*50;
+                if(t === 1) {
+                    let g = ctx.createLinearGradient(xp, yp, xp+50, yp+50);
+                    g.addColorStop(0, game.palette.rock); g.addColorStop(1, "#111");
+                    ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(xp+2, yp+2, 46, 46, 5); ctx.fill();
+                } else if(t === 2) {
+                    let g = ctx.createRadialGradient(xp+25, yp+25, 5, xp+25, yp+25, 30);
+                    g.addColorStop(0, "#000"); g.addColorStop(1, "#151515");
+                    ctx.fillStyle = g; ctx.fillRect(xp, yp, 50, 50);
+                } else if(t === 4) {
+                    let s = Math.sin(Date.now()/120)*6;
+                    ctx.fillStyle = "#f50"; ctx.beginPath(); ctx.arc(xp+25, yp+35, 16+s, 0, Math.PI*2); ctx.fill();
+                    ctx.fillStyle = "#ff0"; ctx.beginPath(); ctx.arc(xp+25, yp+35, 8+s/2, 0, Math.PI*2); ctx.fill();
+                }
+            }
+            // Portas
+            ctx.fillStyle = enemies.length === 0 ? "#0f0" : "#800";
+            ctx.fillRect(500, 0, 50, 15); ctx.fillRect(500, 585, 50, 15);
+        }
+
+        // --- CORE ---
+        function initGame(char) {
+            document.getElementById('menu').classList.add('hidden');
+            const ui = ['ui-layer', 'gameCanvas', 'ui-controls'];
+            ui.forEach(id => document.getElementById(id).classList.remove('hidden'));
+
+            const c = {
+                isaac: { hp:3, speed:4.5, dmg:1.2, fireRate:20, wep:'tear', color:'#fff', fly:false },
+                maggy: { hp:4, speed:3.5, dmg:1.0, fireRate:25, wep:'tear', color:'#ffb3ba', fly:false },
+                azazel: { hp:3, speed:5.0, dmg:2.5, fireRate:40, wep:'laser', color:'#333', fly:true }
+            }[char];
+
+            player = new Player(c);
+            game.active = true;
+            setupJoy('joy-move', 'knob-move', moveIn);
+            setupJoy('joy-shoot', 'knob-shoot', shootIn);
+            newFloor();
+            requestAnimationFrame(loop);
+        }
+
+        function newFloor() {
+            let pKey = Object.keys(PALETTES).reverse().find(k => game.floor >= k);
+            game.palette = PALETTES[pKey];
+            generateMap(); player.x = 525; player.y = 300;
+            enemies = []; projectiles = []; upgrade = null;
+            let ec = 2 + Math.floor(game.floor/1.5);
+            for(let i=0; i<ec; i++) enemies.push(new Enemy(Math.random()*400+250, Math.random()*400+100));
+            if(game.floor % 5 === 0) enemies.push(new Enemy(250, 150, true));
+        }
+
+        function loop() {
+            if(!game.active) return;
+            ctx.clearRect(0,0,900,600);
+            drawMap();
+            
+            // HUD lateral
+            ctx.fillStyle = "#111"; ctx.fillRect(0,0,150,600);
+            ctx.fillStyle = game.palette.accent; ctx.font = "bold 16px Courier";
+            ctx.fillText(game.palette.name, 20, 50);
+            ctx.fillStyle = "#fff"; ctx.font = "14px Courier";
+            ctx.fillText("SPD: "+player.speed.toFixed(1), 20, 180);
+            ctx.fillText("TRS: "+(30/player.fireRate).toFixed(1), 20, 210);
+            ctx.fillText("DMG: "+player.dmg.toFixed(1), 20, 240);
+            ctx.fillStyle = "#ff4d4d"; ctx.fillText("HP: "+player.hp+"/"+player.max, 20, 270);
+
+            player.update(); player.draw();
+
+            // Lógica Projéteis
+            projectiles.forEach((p, i) => { 
+                p.update(); p.draw(); 
+                if(p.life <= 0) projectiles.splice(i, 1);
+                // Apagar fogo
+                let gx = Math.floor(p.x/50), gy = Math.floor(p.y/50);
+                if(currentMap[gy] && currentMap[gy][gx] === 4) { currentMap[gy][gx] = 0; p.life = 0; }
+            });
+
+            // Lógica Inimigos
+            enemies.forEach((e, i) => {
+                e.update(); e.draw();
+                projectiles.forEach((p, pi) => {
+                    if(Math.hypot(p.x-e.x, p.y-e.y) < e.size+10) {
+                        e.hp -= p.dmg; projectiles.splice(pi, 1);
+                    }
+                });
+                if(player.wep === 'laser' && Math.hypot(shootIn.x, shootIn.y) > 0.5) {
+                    let dx = e.x-player.x, dy = e.y-player.y;
+                    let cross = Math.abs(shootIn.y*dx - shootIn.x*dy);
+                    if(cross < e.size+15 && (shootIn.x*dx + shootIn.y*dy) > 0) e.hp -= 0.15;
+                }
+                if(e.delay === 0 && Math.hypot(e.x-player.x, e.y-player.y) < player.radius+e.size) player.takeDmg(1);
+                if(e.hp <= 0) enemies.splice(i, 1);
+            });
+
+            // Item de Upgrade
+            if(enemies.length === 0 && !upgrade) {
+                upgrade = { x: 525, y: 150, d: ITEMS[Math.floor(Math.random()*ITEMS.length)] };
+            }
+            if(upgrade) {
+                ctx.fillStyle = "#fff"; ctx.shadowBlur = 20; ctx.shadowColor = "white";
+                ctx.beginPath(); ctx.arc(upgrade.x, upgrade.y, 15, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
+                if(Math.hypot(player.x-upgrade.x, player.y-upgrade.y) < 30) {
+                    upgrade.d.f(player);
+                    const b = document.getElementById('item-banner');
+                    document.getElementById('it-name').innerText = upgrade.d.n;
+                    document.getElementById('it-stat').innerText = upgrade.d.s;
+                    b.classList.add('show'); setTimeout(() => b.classList.remove('show'), 2000);
+                    upgrade = null; game.floor++; newFloor();
+                }
+            }
+
+            requestAnimationFrame(loop);
+        }
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vampire Crawlers: Darkest Descent</title>
+    <title>Vampire Crawlers: Darkest Descent - Refined</title>
     <style>
         :root { 
             --mana: #4a90e2; --gold: #d4af37; --hp: #8b0000; --soul: #4b0082; 
@@ -21,7 +21,7 @@
         #crt-filter {
             position: fixed; inset: 0; pointer-events: none; z-index: 9999;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
-            background-size: 100% 3px; opacity: 0.3;
+            background-size: 100% 3px; opacity: 0.2;
         }
 
         /* --- INTERFACE DE CRIAÇÃO --- */
@@ -29,153 +29,187 @@
             position: fixed; inset: 0; background: #000; z-index: 5000; 
             display: flex; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; 
         }
-        .setup-group { width: 100%; max-width: 500px; margin-bottom: 20px; text-align: center; border: 1px solid #222; padding: 10px; border-radius: 8px; background: rgba(10,10,10,0.5); }
-        input[type="text"] { width: 100%; padding: 12px; background: #111; border: 1px solid var(--border); color: white; text-align: center; font-family: inherit; font-size: 18px; }
+        .setup-group { width: 100%; max-width: 550px; margin-bottom: 15px; text-align: center; border: 1px solid #222; padding: 10px; border-radius: 8px; background: rgba(10,10,10,0.5); }
+        input[type="text"] { width: 100%; padding: 12px; background: #111; border: 1px solid var(--border); color: white; text-align: center; font-family: inherit; font-size: 18px; border-radius: 4px; }
         .sel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .sel-card { background: #1a1a1e; border: 1px solid var(--border); padding: 10px; cursor: pointer; font-size: 12px; transition: 0.2s; position: relative; }
-        .sel-card.active { border-color: var(--gold); background: #2a0a0a; border-width: 2px; box-shadow: 0 0 10px var(--hp); }
+        .sel-card { background: #1a1a1e; border: 1px solid var(--border); padding: 12px; cursor: pointer; font-size: 11px; transition: 0.2s; position: relative; border-radius: 4px; }
+        .sel-card.active { border-color: var(--gold); background: #2a0a0a; border-width: 2px; box-shadow: 0 0 15px var(--gold); transform: scale(1.02); }
         .desc-pop { font-size: 10px; color: #888; display: block; margin-top: 5px; }
-        #lore-box { font-size: 13px; color: #aaa; width: 100%; max-width: 500px; text-align: center; margin-bottom: 15px; font-style: italic; min-height: 60px; background: rgba(30,30,30,0.8); padding: 15px; border-radius: 8px; border: 1px solid #333; line-height: 1.4; border-left: 4px solid var(--gold); }
+        
+        #lore-box { font-size: 14px; color: #bbb; width: 100%; max-width: 550px; text-align: center; margin-bottom: 15px; font-style: italic; min-height: 70px; background: rgba(20,20,20,0.9); padding: 15px; border-radius: 8px; border: 1px solid #333; border-left: 4px solid var(--gold); line-height: 1.4; }
+        #backstage-stats { width: 100%; max-width: 550px; background: #111; padding: 12px; border: 1px solid #444; border-radius: 5px; margin-bottom: 15px; display: flex; justify-content: space-around; font-size: 13px; color: var(--gold); font-weight: bold; }
 
-        /* --- GLOBOS ESTILO DIABLO --- */
-        #globes-container {
-            position: fixed; bottom: 80px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; pointer-events: none; z-index: 2000;
+        /* --- HUD ESTILO DIABLO --- */
+        #diablo-hud {
+            position: fixed; bottom: 75px; width: 100%; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px; pointer-events: none; z-index: 4000;
         }
+        .globe-wrapper { display: flex; flex-direction: column; align-items: center; }
         .globe {
-            width: 90px; height: 90px; border-radius: 50%; border: 4px solid #333; background: #111; overflow: hidden; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            width: 100px; height: 100px; border-radius: 50%; border: 4px solid #333; background: #050505; overflow: hidden; position: relative; box-shadow: 0 0 30px #000; pointer-events: auto;
         }
-        .globe-fill {
-            position: absolute; bottom: 0; width: 100%; transition: height 0.5s ease-in-out;
-        }
-        #hp-fill { background: linear-gradient(0deg, #400 0%, #a00 50%, #f00 100%); box-shadow: 0 0 15px #f00; }
-        #mana-fill { background: linear-gradient(0deg, #004 0%, #00a 50%, #0af 100%); box-shadow: 0 0 15px #0af; }
-        .globe-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; text-shadow: 1px 1px 2px black; font-size: 14px; z-index: 10; }
+        .globe-fill { position: absolute; bottom: 0; width: 100%; transition: height 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #hp-fill { background: linear-gradient(0deg, #400 0%, #a00 50%, #f00 100%); box-shadow: inset 0 0 20px rgba(255,0,0,0.5); }
+        #mana-fill { background: linear-gradient(0deg, #004 0%, #00a 50%, #0af 100%); box-shadow: inset 0 0 20px rgba(0,255,255,0.5); }
+        .globe-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; text-shadow: 2px 2px 5px black; font-size: 14px; z-index: 10; }
 
-        /* --- LAYOUT PRINCIPAL --- */
-        #game-container { display: flex; flex-direction: row; flex: 1; overflow: hidden; }
+        /* --- LAYOUT DO JOGO --- */
+        #game-container { display: flex; flex-direction: row; flex: 1; overflow: hidden; transition: filter 0.2s; }
+        .screen-shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(5px, 5px); } 50% { transform: translate(-5px, -5px); } 75% { transform: translate(5px, -5px); } }
+
         @media (max-width: 600px) {
             #game-container { flex-direction: column; }
-            #side-panel { height: 75px; width: 100%; flex-direction: row; overflow-x: auto; padding: 5px; border-right: none; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+            #side-panel { height: 75px; width: 100%; flex-direction: row; overflow-x: auto; padding: 5px; border-right: none; border-bottom: 2px solid var(--border); flex-shrink: 0; }
             .stat-group { border-bottom: none !important; border-right: 1px solid var(--border); padding: 0 10px !important; min-width: 90px; }
-            #globes-container { bottom: 150px; }
+            #diablo-hud { bottom: 160px; }
         }
 
-        #side-panel { background: var(--panel); border-right: 2px solid var(--border); padding: 12px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+        #side-panel { background: var(--panel); border-right: 2px solid var(--border); padding: 15px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
         .stat-group { border-bottom: 1px solid var(--border); padding-bottom: 6px; }
         .stat-group b { font-size: 10px; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
         .stat-val { font-size: 14px; font-weight: bold; display: block; }
 
         #main-view { position: relative; display: flex; flex-direction: column; background: #050507; flex: 1; overflow: hidden; }
-        #stage { height: 42vh; position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 30px; border-bottom: 2px solid var(--border); flex-shrink: 0; }
+        #stage { height: 45vh; position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 40px; border-bottom: 2px solid var(--border); flex-shrink: 0; transition: background 1.2s; }
         
-        .parallax { position: absolute; inset: 0; pointer-events: none; white-space: nowrap; }
-        .px-back { font-size: 70px; opacity: 0.05; animation: scroll 60s linear infinite; }
-        .px-mid { font-size: 40px; opacity: 0.12; animation: scroll 30s linear infinite; }
+        .parallax { position: absolute; inset: 0; pointer-events: none; white-space: nowrap; transition: 0.5s; }
+        .px-back { font-size: 80px; opacity: 0.08; animation: scroll 60s linear infinite; }
 
-        #d20-container { position: absolute; top: 15px; right: 15px; width: 55px; height: 55px; background: #222; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; z-index: 200; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); }
+        #d20-container { position: absolute; top: 20px; right: 20px; width: 65px; height: 65px; background: #222; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; z-index: 200; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); box-shadow: 0 0 20px #000; }
         .rolling { animation: roll 0.6s ease-out; color: var(--gold); }
-        @keyframes roll { 0% { transform: rotate(0) scale(1); } 50% { transform: rotate(180deg) scale(1.3); } 100% { transform: rotate(360deg) scale(1); } }
+        @keyframes roll { 0% { transform: scale(1) rotate(0); } 50% { transform: scale(1.4) rotate(180deg); } 100% { transform: scale(1) rotate(360deg); } }
         
-        #narrative-log { position: absolute; top: 85px; left: 50%; transform: translateX(-50%); width: 85%; background: rgba(0,0,0,0.9); border: 1px solid var(--border); padding: 10px; font-size: 13px; text-align: center; font-style: italic; z-index: 150; border-radius: 4px; border-left: 5px solid var(--gold); }
+        #narrative-log { position: absolute; top: 95px; left: 50%; transform: translateX(-50%); width: 85%; background: rgba(0,0,0,0.92); border: 1px solid var(--border); padding: 12px; font-size: 13px; text-align: center; font-style: italic; z-index: 150; border-radius: 4px; border-left: 5px solid var(--gold); box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
 
         #enemy-row { display: flex; gap: 20px; z-index: 10; align-items: flex-end; }
-        .enemy { text-align: center; position: relative; transition: 0.4s; cursor: pointer; width: 85px; }
-        .enemy.selected { transform: translateY(-15px) scale(1.15); filter: drop-shadow(0 0 15px var(--mana)); }
-        .enemy-sprite { font-size: 55px; filter: drop-shadow(3px 3px 5px #000); }
+        .enemy { text-align: center; position: relative; transition: 0.4s; cursor: pointer; width: 100px; }
+        .enemy.selected { transform: translateY(-20px) scale(1.1); filter: drop-shadow(0 0 20px var(--mana)); }
+        .enemy-sprite { font-size: 60px; filter: drop-shadow(2px 2px 5px #000); }
         .enemy-atk-anim { animation: enemyAtk 0.5s ease; }
-        @keyframes enemyAtk { 0% { transform: translateY(0); } 50% { transform: translateY(80px) scale(1.2); } 100% { transform: translateY(0); } }
-
-        #hand-area { background: #08080a; flex: 1; display: flex; flex-direction: column; border-top: 2px solid var(--border); overflow: hidden; position: relative; }
-        #hand { display: flex; gap: 10px; padding: 15px; overflow-x: auto; flex: 1; align-items: center; justify-content: flex-start; }
+        @keyframes enemyAtk { 0% { transform: translateY(0); } 50% { transform: translateY(80px); } 100% { transform: translateY(0); } }
         
-        .card { min-width: 95px; height: 130px; background: linear-gradient(135deg, #16161a, #0a0a0c); border: 2px solid #333; border-radius: 8px; position: relative; flex-shrink: 0; text-align: center; padding: 8px; font-size: 10px; transition: 0.3s; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;}
-        .card.active { border-color: var(--mana); box-shadow: 0 5px 15px rgba(74, 144, 226, 0.2); }
+        .enemy-hp-bar { width: 100%; height: 8px; background: #1a1a1a; border: 1px solid #444; margin-top: 10px; border-radius: 4px; overflow: hidden; }
+        .enemy-hp-fill { height: 100%; background: linear-gradient(90deg, #600, #f00); transition: width 0.4s; }
+
+        #hand-area { background: #08080a; flex: 1; display: flex; flex-direction: column; border-top: 2px solid var(--border); overflow: hidden; padding-bottom: 85px; }
+        #hand { display: flex; gap: 12px; padding: 20px; overflow-x: auto; flex: 1; align-items: center; justify-content: flex-start; }
+        
+        .card { min-width: 100px; height: 140px; background: linear-gradient(135deg, #1c1c22, #0a0a0c); border: 2px solid #444; border-radius: 8px; position: relative; flex-shrink: 0; text-align: center; padding: 10px; font-size: 10px; transition: 0.3s; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 8px #000;}
+        .card:hover { transform: translateY(-10px); border-color: #888; }
+        .card.active { border-color: var(--mana); box-shadow: 0 0 15px rgba(74,144,226,0.3); }
         .card.no-mana { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
         .card.curse { border-color: #8b0000; background: #1a0505; animation: jitter 0.2s infinite; }
-        .card-cost { position: absolute; top: -10px; left: -10px; background: var(--mana); width: 26px; height: 26px; border-radius: 50%; line-height: 26px; font-weight: bold; font-size: 12px; border: 2px solid #000; z-index: 5; }
+        @keyframes jitter { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, -1px); } }
+        .card-cost { position: absolute; top: -12px; left: -12px; background: var(--mana); width: 30px; height: 30px; border-radius: 50%; line-height: 30px; font-weight: bold; font-size: 14px; border: 2px solid #000; z-index: 5; box-shadow: 0 0 10px #000; }
         
-        #end-turn-btn { flex-basis: 75px; flex-shrink: 0; background: #1a0505; color: var(--hp); border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; border-top: 4px solid var(--gold); width: 100%; transition: 0.3s; letter-spacing: 3px; font-size: 18px; z-index: 1000; }
+        #end-turn-btn { flex-basis: 80px; flex-shrink: 0; background: #1a0505; color: var(--hp); border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; border-top: 4px solid var(--gold); width: 100%; transition: 0.3s; letter-spacing: 4px; font-size: 20px; z-index: 1000; }
+        #end-turn-btn:hover { background: #3a0000; color: #fff; }
         #end-turn-btn:disabled { background: #222 !important; color: #555 !important; cursor: wait; }
         .stall-warning { background: #ff0000 !important; color: #fff !important; animation: pulseAlert 0.8s infinite alternate !important; }
+        @keyframes pulseAlert { from { filter: brightness(1); } to { filter: brightness(0.6); } }
 
-        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.97); z-index: 6000; flex-direction: column; align-items: center; padding: 25px; overflow-y: auto; }
-        .slot-machine { width: 100%; max-width: 350px; background: #1a1a20; border: 5px solid var(--gold); padding: 25px; border-radius: 15px; text-align: center; }
-        .tree-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; width: 100%; max-width: 600px; margin-top: 20px; }
-        .node { padding: 15px; background: #111; border: 2px solid #444; border-radius: 8px; cursor: pointer; text-align: center; transition: 0.3s; }
-        .node:hover { border-color: var(--soul); }
-        .node.bought { border-color: var(--gold); background: #1a1a05; opacity: 0.7; }
-        .btn-choice { padding: 15px 30px; margin: 10px; cursor: pointer; border: none; font-weight: bold; border-radius: 5px; }
+        /* --- MODAIS --- */
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.98); z-index: 6000; flex-direction: column; align-items: center; padding: 40px; overflow-y: auto; }
+        .slot-machine { width: 100%; max-width: 450px; background: #1a1a20; border: 5px solid var(--gold); padding: 30px; border-radius: 15px; text-align: center; box-shadow: 0 0 50px rgba(212, 175, 55, 0.2); }
+        .slot-container { display: flex; gap: 15px; justify-content: center; margin: 20px 0; }
+        .slot-reel { width: 90px; height: 90px; background: #000; border: 3px solid #333; font-size: 45px; display: flex; align-items: center; justify-content: center; border-radius: 10px; color: var(--gold); }
+        
+        .tree-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; width: 100%; max-width: 800px; margin-top: 30px; }
+        .node { padding: 20px; background: #111; border: 2px solid #444; border-radius: 10px; cursor: pointer; text-align: center; transition: 0.3s; }
+        .node:hover { border-color: var(--soul); background: #150a1a; transform: scale(1.05); }
+        .node.bought { border-color: var(--gold); background: #222211; }
+        
+        .dmg-txt { position: absolute; font-weight: 900; font-size: 40px; pointer-events: none; z-index: 300; animation: fadeUp 1s forwards; text-shadow: 3px 3px #000; letter-spacing: -2px; }
+        @keyframes fadeUp { to { transform: translateY(-150px); opacity: 0; } }
+        
+        /* --- DADO D6 VISUAL --- */
+        #d6-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 7000; flex-direction: column; align-items: center; justify-content: center; }
+        .dice-d6 { width: 100px; height: 100px; background: white; color: black; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 50px; font-weight: bold; border: 5px solid #888; box-shadow: 0 0 30px #fff; }
+        .rolling-d6 { animation: d6roll 1.5s ease-out; }
+        @keyframes d6roll { 0% { transform: rotate(0) scale(0.5); } 100% { transform: rotate(720deg) scale(1); } }
     </style>
 </head>
 <body>
 
 <div id="crt-filter"></div>
 
-<div id="globes-container">
-    <div class="globe">
-        <div id="hp-fill" class="globe-fill" style="height: 100%;"></div>
-        <div id="hp-text" class="globe-text">100/100</div>
+<div id="d6-modal">
+    <h2 style="color:var(--gold); margin-bottom: 20px;">DITANDO A DIFICULDADE...</h2>
+    <div id="d6-visual" class="dice-d6">?</div>
+    <p id="d6-desc" style="margin-top: 20px; color: white; font-weight: bold;"></p>
+</div>
+
+<div id="diablo-hud">
+    <div class="globe-wrapper">
+        <div class="globe"><div id="hp-fill" class="globe-fill"></div><div id="hp-text" class="globe-text">0/0</div></div>
+        <small style="color:var(--hp); font-size:10px; margin-top:5px; font-weight:bold;">VIGOR</small>
     </div>
-    <div class="globe">
-        <div id="mana-fill" class="globe-fill" style="height: 100%;"></div>
-        <div id="mana-text" class="globe-text">5/5</div>
+    <div class="globe-wrapper">
+        <div class="globe"><div id="mana-fill" class="globe-fill"></div><div id="mana-text" class="globe-text">0/0</div></div>
+        <small style="color:var(--mana); font-size:10px; margin-top:5px; font-weight:bold;">ESSÊNCIA</small>
     </div>
 </div>
 
 <div id="creation-overlay">
-    <h1 style="color:var(--hp); letter-spacing: 6px; font-size: 32px; text-shadow: 0 0 15px var(--hp);">VAMPIRE CRAWLERS</h1>
-    <div class="setup-group"><input type="text" id="char-name" placeholder="NOME DO MALDITO" maxlength="12"></div>
-
+    <h1 style="color:var(--hp); letter-spacing: 6px; font-size: 36px; text-shadow: 0 0 20px var(--hp);">VAMPIRE CRAWLERS</h1>
+    
     <div class="setup-group">
-        <small style="color:var(--gold)">ORIGEM GEOGRÁFICA</small>
-        <div class="sel-grid">
-            <div id="o-Cidadela" class="sel-card" onclick="setOrigin('Cidadela')"><b>Cidadela de Ferro</b><span class="desc-pop">+15 Atk Base / Nobreza</span></div>
-            <div id="o-Favela" class="sel-card" onclick="setOrigin('Favela')"><b>Subterrâneo</b><span class="desc-pop">+50 Ouro / Sobrevivente</span></div>
-            <div id="o-Bosque" class="sel-card" onclick="setOrigin('Bosque')"><b>Bosque Velho</b><span class="desc-pop">+30 HP Max / Selvagem</span></div>
-            <div id="o-Mar" class="sel-card" onclick="setOrigin('Mar')"><b>Costa Sangue</b><span class="desc-pop">+2 Mana Max / Errante</span></div>
-        </div>
+        <input type="text" id="char-name" placeholder="NOME DO MALDITO" maxlength="12" oninput="updateLore()">
+    </div>
+
+    <div id="backstage-stats">
+        <span>HP: <b id="pre-hp">100</b></span>
+        <span>ATK: <b id="pre-atk">10</b></span>
+        <span>MANA: <b id="pre-mana">5</b></span>
     </div>
 
     <div class="setup-group">
-        <small style="color:var(--gold)">DESCENDÊNCIA</small>
+        <small style="color:var(--gold)">BIOMA DE NASCIMENTO (ORIGEM)</small>
         <div class="sel-grid">
-            <div id="r-Humano" class="sel-card" onclick="setRace('Humano')"><b>Humano</b><span class="desc-pop">+20 HP / +2 Mana</span></div>
-            <div id="r-Vampiro" class="sel-card" onclick="setRace('Vampiro')"><b>Vampiro</b><span class="desc-pop">+15% Vampirismo</span></div>
-            <div id="r-Carniçal" class="sel-card" onclick="setRace('Carniçal')"><b>Carniçal</b><span class="desc-pop">+20 Dano / -10 HP</span></div>
-            <div id="r-Lobisomem" class="sel-card" onclick="setRace('Lobisomem')"><b>Lobisomem</b><span class="desc-pop">+35 Dano / Mana 3</span></div>
+            <div id="o-Cidadela" class="sel-card" onclick="setOrigin('Cidadela')"><b>Cidadela</b><span class="desc-pop">+20 Atk / Cripta</span></div>
+            <div id="o-Abismo" class="sel-card" onclick="setOrigin('Abismo')"><b>Abismo</b><span class="desc-pop">+3 Mana / Inferno</span></div>
+            <div id="o-Mar" class="sel-card" onclick="setOrigin('Mar')"><b>Costa Sangue</b><span class="desc-pop">+60 Ouro / Costa</span></div>
         </div>
     </div>
 
-    <div class="setup-group">
-        <small style="color:var(--gold)">CLASSE</small>
-        <div class="sel-grid">
-            <div id="c-Cavaleiro" class="sel-card" onclick="setClass('Cavaleiro')"><b>Cavaleiro</b><span class="desc-pop">+25 Dano Base</span></div>
-            <div id="c-Ocultista" class="sel-card" onclick="setClass('Ocultista')"><b>Ocultista</b><span class="desc-pop">+14 Mana Max</span></div>
-            <div id="c-Algoz" class="sel-card" onclick="setClass('Algoz')"><b>Algoz</b><span class="desc-pop">Crítico x3.5</span></div>
-            <div id="c-Necromante" class="sel-card" onclick="setClass('Necromante')"><b>Necromante</b><span class="desc-pop">+10 Almas / +10 Atk</span></div>
+    <div class="setup-grid-parent" style="display:flex; gap:10px; width:100%; max-width:600px;">
+        <div class="setup-group" style="flex:1">
+            <small style="color:var(--gold)">LINHAGEM</small>
+            <div class="sel-grid" style="grid-template-columns: 1fr;">
+                <div id="r-Humano" class="sel-card" onclick="setRace('Humano')"><b>Humano (+20 HP)</b></div>
+                <div id="r-Vampiro" class="sel-card" onclick="setRace('Vampiro')"><b>Vampiro (15% Roubo)</b></div>
+                <div id="r-Lobisomem" class="sel-card" onclick="setRace('Lobisomem')"><b>Lobisomem (+30 Atk)</b></div>
+            </div>
+        </div>
+        <div class="setup-group" style="flex:1">
+            <small style="color:var(--gold)">ARMA INICIAL</small>
+            <div class="sel-grid" style="grid-template-columns: 1fr;">
+                <div id="w-Foice" class="sel-card" onclick="setWeapon('Foice')"><b>Foice (Pesada)</b></div>
+                <div id="w-Adaga" class="sel-card" onclick="setWeapon('Adaga')"><b>Adagas (Ágeis)</b></div>
+            </div>
         </div>
     </div>
 
-    <div id="lore-box">Defina sua linhagem e origem...</div>
-    <button onclick="initGame()" style="margin-top:10px; padding:20px 80px; background:var(--hp); color:white; border:none; font-weight:bold; cursor:pointer; border-radius: 4px; font-size: 18px;">INICIAR SAGA</button>
+    <div id="lore-box">O abismo aguarda sua história...</div>
+    <button onclick="rollD6Start()" style="margin-top:10px; padding:25px 80px; background:var(--hp); color:white; border:none; font-weight:bold; cursor:pointer; border-radius: 8px; font-size: 20px; box-shadow: 0 5px 15px #600;">INICIAR SAGA</button>
 </div>
 
 <div id="game-container">
     <div id="side-panel">
-        <div class="stat-group"><b>Identidade</b><span id="st-name" class="stat-val">-</span></div>
+        <div class="stat-group"><b>Destino (D6)</b><span id="st-diff" style="color:red; font-size:11px">Dificuldade: -</span></div>
+        <div class="stat-group"><b>Nome</b><span id="st-name" class="stat-val">-</span></div>
         <div class="stat-group"><b>Tesouro</b><span id="st-gold" class="stat-val" style="color:var(--gold)">0</span></div>
         <div class="stat-group"><b>Almas</b><span id="st-souls" class="stat-val" style="color:var(--soul)">0</span></div>
-        <div class="stat-group"><b>Dano Total</b><span id="st-atk" class="stat-val">+0</span></div>
-        <div id="inv-slots" class="stat-group"><b>Relíquias:</b><br><span id="st-equip" style="font-size: 10px; color: #777;">Nenhuma</span></div>
+        <div class="stat-group"><b>Poder</b><span id="st-atk" class="stat-val">+0</span></div>
+        <div class="stat-group"><b>Crit Sorte</b><span id="st-crit" style="color:var(--mana)">10%</span></div>
     </div>
 
     <div id="main-view">
         <div id="d20-container">20</div>
-        <div id="narrative-log">A descida começou...</div>
+        <div id="narrative-log">Inicie sua descida...</div>
         
         <div id="stage">
             <div class="parallax px-back" id="px-b"></div>
-            <div class="parallax px-mid" id="px-m"></div>
             <div id="enemy-row"></div>
         </div>
 
@@ -188,90 +222,130 @@
 
 <div id="slot-modal" class="overlay">
     <div class="slot-machine">
-        <h2 style="color:var(--gold); margin:0;">🎰 ROLE O DESTINO</h2>
+        <h2 style="color:var(--gold); margin:0; letter-spacing: 2px;">🎰 FORJA DO DESTINO</h2>
         <div class="slot-container">
-            <div><div id="reel-weapon" class="slot-reel">?</div></div>
-            <div><div id="reel-item" class="slot-reel">?</div></div>
-            <div><div id="reel-curse" class="slot-reel">?</div></div>
+            <div id="slot-arma" class="slot-reel">?</div>
+            <div id="slot-item" class="slot-reel">?</div>
+            <div id="slot-curse" class="slot-reel">?</div>
         </div>
-        <div id="slot-result">Role para ver se os deuses antigos te favorecem...</div>
-        <button id="slot-spin-btn" style="background:var(--gold); border:none; padding:15px; font-weight:bold; cursor:pointer; width: 100%; border-radius: 5px; margin-top: 15px;" onclick="spinSlots()">GIRAR</button>
-        <button id="slot-close-btn" style="display:none; background:#444; color:white; border:none; padding:15px; cursor:pointer; width: 100%; border-radius: 5px;" onclick="closeSlots()">REIVINDICAR</button>
+        <div id="slot-result">Relíquias aguardam seu sangue.</div>
+        <button id="slot-spin-btn" style="background:var(--gold); border:none; padding:15px; font-weight:bold; cursor:pointer; width: 100%; margin-top:10px;" onclick="spinSlots()">GIRAR</button>
+        <button id="slot-close-btn" style="display:none; background:var(--hp); color:white; border:none; padding:15px; cursor:pointer; width: 100%; margin-top:10px;" onclick="closeSlots()">REIVINDICAR</button>
     </div>
 </div>
-
-<div id="event-modal" class="overlay"><div class="event-box" id="event-content" style="background:#111; border: 2px solid var(--gold); padding: 25px; text-align: center;"></div></div>
 
 <div id="soul-modal" class="overlay">
     <h2 style="color:var(--soul)">ALTAR DE ASCENSÃO</h2>
     <div id="soul-ui" class="tree-grid"></div>
-    <button onclick="closeModal('soul-modal')" style="margin-top:20px; background:#222; padding:12px 50px; color:white; border:1px solid #444; cursor:pointer;">VOLTAR</button>
+    <button onclick="closeModal('soul-modal')" style="margin-top:20px; background:#222; padding:12px 50px; color:white; border:1px solid #444; cursor:pointer;">PROSSEGUIR</button>
 </div>
 
 <script>
-// --- CONTEÚDO ---
+// --- DATA E BIOMAS ---
 const Biomes = [
-    { n: "Cripta de Sangue", bg: "radial-gradient(#200, #000)", back: "🏰 🩸 🏰 🧱", mid: "💀 🕸️ 💀 🦴", enemies: ["🦇", "💀", "🧟", "🩸"], log: "O cheiro de ferro e podridão empesteia o ar." },
-    { n: "Abismo de Dante", bg: "radial-gradient(#310, #000)", back: "🔥 🌋 🔥 🌋", mid: "👹 🔱 👺 🔱", enemies: ["👺", "🐉", "🔥", "☄️"], log: "O calor distorce a realidade. O enxofre queima." },
-    { n: "Pântano Negro", bg: "radial-gradient(#020, #000)", back: "🌳 🌫️ 🌳 🌫️", mid: "🐍 🍄 🐊 🍄", enemies: ["🐊", "🦟", "🐸", "🌫️"], log: "A lama borbulha com segredos antigos." },
-    { n: "Pico de Gelo", bg: "radial-gradient(#002, #000)", back: "🏔️ 🌨️ 🏔️ 🌨️", mid: "❄️ 🌬️ 🧊 🌬️", enemies: ["🥶", "🐺", "☃️", "🧊"], log: "O frio penetra até o âmago da sua alma." },
-    { n: "Vazio Final", bg: "radial-gradient(#000, #000)", back: "🌌 ✨ 🌌 ✨", mid: "🌑 ☄️ 🌀 ☄️", enemies: ["👽", "👤", "👾", "🌀"], log: "Onde tudo termina e nada começa." }
+    { id: 'Cidadela', n: "Cripta de Sangue", bg: "radial-gradient(#200, #000)", back: "🏰 🩸 🏰 🧱", enemies: ["🦇", "💀", "🧟"], log: "O cheiro de ferro e podridão empesteia o ar." },
+    { id: 'Abismo', n: "Inferno de Dante", bg: "radial-gradient(#310, #000)", back: "🔥 🌋 🔥 🌋", enemies: ["👺", "🐉", "🔥"], log: "O calor distorce sua visão. O inferno é real." },
+    { id: 'Costa', n: "Costa Marinha", bg: "radial-gradient(#012, #000)", back: "🌊 ⚓ 🌊 ⚓", enemies: ["🏴‍☠️", "🦈", "🐚"], log: "As ondas trazem o lamento dos afogados." }
 ];
 
-const Weapons = [
-    { n: "CHICOTE", d: 18, c: 1, i: "➰", a: false },
-    { n: "BÍBLIA", d: 14, c: 2, i: "📖", a: true },
-    { n: "FOICE", d: 36, c: 3, i: "🔨", a: false },
-    { n: "ADAGA", d: 10, c: 0, i: "🗡️", a: false },
-    { n: "MANGUAL", d: 25, c: 2, i: "⛓️", a: false },
-    { n: "BESTA", d: 28, c: 1, i: "🏹", a: false },
-    { n: "ESTACA", d: 30, c: 2, i: "📍", a: false },
-    { n: "GRIMÓRIO", d: 45, c: 4, i: "📕", a: true },
-    { n: "MACHADO", d: 50, c: 3, i: "🪓", a: false },
-    { n: "RAIO", d: 40, c: 3, i: "⚡", a: true }
-];
+const WeaponsPool = {
+    'Foice': { n: "FOICE", d: 50, c: 3, i: "🔨" },
+    'Adaga': { n: "ADAGAS", d: 15, c: 0, i: "🗡️" },
+    'Chicote': { n: "CHICOTE", d: 20, c: 1, i: "➰" },
+    'Biblia': { n: "BÍBLIA", d: 18, c: 2, i: "📖", a: true }
+};
 
 const SkillNodes = [
-    { id: 'a1', n: 'Garras', d: '+20 Atk', c: 2, f: () => Player.atk += 20 },
-    { id: 'h1', n: 'Coração', d: '+60 HP', c: 2, f: () => { Player.maxHp += 60; Player.hp = Player.maxHp; } },
-    { id: 'm1', n: 'Mente', d: '+3 Mana Max', c: 3, f: () => Player.maxMana += 3 },
-    { id: 'v1', n: 'Sede', d: '+20% Roubo', c: 4, f: () => Player.vamp += 0.20 }
+    { id: 'a1', n: 'Força Titânica', d: '+20 Atk', c: 2, f: () => Player.atk += 20 },
+    { id: 'h1', n: 'Vigor Imortal', d: '+50 HP', c: 2, f: () => { Player.maxHp += 50; Player.hp += 50; } },
+    { id: 'm1', n: 'Essência Astral', d: '+1 Mana', c: 5, f: () => Player.maxMana += 1 },
+    { id: 'v1', n: 'Toque Vampírico', d: '+15% Vamp', c: 4, f: () => Player.vamp += 0.15 },
+    { id: 'c1', n: 'Golpe Fatal', d: '+15% Crítico', c: 4, f: () => Player.crit += 0.15 }
+];
+
+const Chronicles = [
+    "Sua lâmina canta uma música de morte nas sombras.",
+    "O abismo começa a reconhecer sua força profana.",
+    "Os sussurros dos mortos guiam seus passos sangrentos.",
+    "Você não é mais uma vítima, você é o pesadelo."
 ];
 
 const Player = {
-    name: "Herói", race: "", class: "", origin: "", hp: 100, maxHp: 100, mana: 5, maxMana: 5, gold: 0, souls: 0, 
-    atk: 10, crit: 0.1, vamp: 0, kills: 0, worldIdx: 0, skills: [], curses: [], equip: []
+    name: "", race: "", origin: "", hp: 100, maxHp: 100, mana: 5, maxMana: 5, gold: 0, souls: 0, 
+    atk: 10, crit: 0.1, vamp: 0, kills: 0, worldIdx: 0, skills: [], curses: [], equip: [], diff: 1, startWeapon: null
 };
 
 let enemies = [];
 let selectedIdx = 0;
 let isTurnEnding = false;
 
-// --- CRIAÇÃO ---
-function setRace(r) { Player.race = r; updateLore(); document.querySelectorAll('[id^="r-"]').forEach(el => el.classList.remove('active')); document.getElementById('r-'+r).classList.add('active'); }
-function setClass(c) { Player.class = c; updateLore(); document.querySelectorAll('[id^="c-"]').forEach(el => el.classList.remove('active')); document.getElementById('c-'+c).classList.add('active'); }
-function setOrigin(o) { Player.origin = o; updateLore(); document.querySelectorAll('[id^="o-"]').forEach(el => el.classList.remove('active')); document.getElementById('o-'+o).classList.add('active'); }
+// --- LÓGICA DE CRIAÇÃO ---
+function setRace(r) { Player.race = r; activeBtn('r-', r); updateLore(); }
+function setOrigin(o) { 
+    Player.origin = o; 
+    Player.worldIdx = Biomes.findIndex(b => b.id === o);
+    activeBtn('o-', o); updateLore(); 
+}
+function setWeapon(w) { Player.startWeapon = WeaponsPool[w]; activeBtn('w-', w); updateLore(); }
+function activeBtn(p, id) { document.querySelectorAll(`[id^="${p}"]`).forEach(el => el.classList.remove('active')); if(document.getElementById(p+id)) document.getElementById(p+id).classList.add('active'); }
 
 function updateLore() {
+    let hp = 100, atk = 10, mana = 5;
+    if(Player.origin === 'Cidadela') atk += 20;
+    if(Player.origin === 'Abismo') mana += 3;
+    if(Player.origin === 'Costa') hp += 30;
+    if(Player.race === 'Vampiro') hp -= 10;
+    if(Player.race === 'Lobisomem') atk += 30;
+    
+    document.getElementById('pre-hp').innerText = hp;
+    document.getElementById('pre-atk').innerText = atk;
+    document.getElementById('pre-mana').innerText = mana;
+
     const box = document.getElementById('lore-box');
-    if(Player.race && Player.class && Player.origin) {
-        const lore = {
-            'Cidadela': "Expulso da elite por segredos proibidos, você busca retomar seu trono de ossos.",
-            'Favela': "Nascido no lixo, forjado no sangue. Um sobrevivente que aprendeu que a vida vale menos que ouro.",
-            'Bosque': "Criado por lobos no Bosque Velho, você é puro instinto e fúria primitiva.",
-            'Mar': "O mar de sangue te cuspiu de volta. Você traz o sal das lágrimas e o rancor das profundezas."
+    const nameInput = document.getElementById('char-name').value || "Maldito";
+    if(Player.origin) {
+        const stories = {
+            'Cidadela': `${nameInput} rastejou para fora das Criptas, onde a nobreza foi enterrada viva.`,
+            'Abismo': `${nameInput} foi batizado nas brasas do Inferno de Dante, buscando vingança.`,
+            'Costa': `${nameInput} foi cuspido pelo Mar de Sangue, único sobrevivente do exílio.`
         };
-        box.innerText = lore[Player.origin] + ` Um ${Player.race} ${Player.class} pronto para o massacre.`;
+        box.innerText = stories[Player.origin] + " O destino será decidido pela rolagem inicial.";
     }
 }
 
+// --- CORE ---
+function rollD6Start() {
+    if(!Player.race || !Player.origin || !Player.startWeapon) return alert("Complete suas escolhas!");
+    const modal = document.getElementById('d6-modal');
+    modal.style.display = 'flex';
+    const visual = document.getElementById('d6-visual');
+    const desc = document.getElementById('d6-desc');
+    visual.classList.add('rolling-d6');
+    
+    let count = 0;
+    const interval = setInterval(() => {
+        visual.innerText = Math.floor(Math.random()*6)+1;
+        count++;
+        if(count > 15) {
+            clearInterval(interval);
+            const val = Math.floor(Math.random()*6)+1;
+            Player.diff = val;
+            visual.innerText = val;
+            visual.classList.remove('rolling-d6');
+            desc.innerText = `NÍVEL DE AGONIA ${val}: Inimigos ${(val*15)}% mais fortes.`;
+            setTimeout(() => { modal.style.display = 'none'; initGame(); }, 2000);
+        }
+    }, 100);
+}
+
 function initGame() {
-    if(!Player.race || !Player.class || !Player.origin) return alert("Complete sua ficha de personagem.");
     Player.name = document.getElementById('char-name').value || "Maldito";
-    if(Player.origin === 'Cidadela') Player.atk += 15;
-    if(Player.origin === 'Favela') Player.gold += 50;
-    if(Player.origin === 'Bosque') Player.maxHp += 30;
-    if(Player.origin === 'Mar') Player.maxMana += 2;
+    if(Player.origin === 'Cidadela') Player.atk += 20;
+    if(Player.origin === 'Abismo') { Player.maxMana += 3; Player.atk += 5; }
+    if(Player.origin === 'Costa') { Player.gold += 60; Player.maxHp += 30; }
+    if(Player.race === 'Vampiro') Player.vamp += 0.15;
+    if(Player.race === 'Lobisomem') Player.atk += 30;
+
     Player.hp = Player.maxHp; Player.mana = Player.maxMana;
     document.getElementById('creation-overlay').style.display = 'none';
     spawnEnemies();
@@ -280,49 +354,53 @@ function initGame() {
 function spawnEnemies() {
     enemies = []; isTurnEnding = false;
     document.getElementById('end-turn-btn').disabled = false;
-    const worldIndex = Player.worldIdx % Biomes.length;
-    const w = Biomes[worldIndex];
+    
+    if(Player.kills > 0 && Player.kills % 10 === 0) {
+        Player.worldIdx++;
+    }
+
+    const w = Biomes[Player.worldIdx % Biomes.length];
     document.getElementById('stage').style.background = w.bg;
     document.getElementById('px-b').innerText = w.back;
-    document.getElementById('px-m').innerText = w.mid;
     log(w.log);
     
-    const count = Math.min(3, 1 + Math.floor(Player.kills / 10));
+    const count = Math.min(3, 1 + Math.floor(Player.kills / 8));
     for(let i=0; i<count; i++) {
-        const hp = 80 + Player.kills*12;
-        enemies.push({ n: "Alvo", i: w.enemies[Math.floor(Math.random()*w.enemies.length)], hp: hp, maxHp: hp, atk: 15 + Player.kills });
+        const hp = Math.floor((80 + Player.kills*15) * (1 + (Player.diff * 0.15)));
+        enemies.push({ n: "Alvo", i: w.enemies[Math.floor(Math.random()*w.enemies.length)], hp: hp, maxHp: hp, atk: Math.floor((10 + Player.kills) * (1 + (Player.diff * 0.1))) });
     }
     updateUI();
 }
 
-// --- COMBATE ---
 async function playCard(card) {
     if(Player.mana < card.c || isTurnEnding || enemies.length === 0) return;
     Player.mana -= card.c;
-    const v = Math.floor(Math.random()*20)+1;
-    document.getElementById('d20-container').innerText = v;
+    
+    let v = Math.floor(Math.random()*20)+1;
+    if(Math.random() < Player.crit && v < 15) v = Math.floor(Math.random()*6)+15;
+
+    const d20 = document.getElementById('d20-container');
+    d20.innerText = v; d20.classList.add('rolling');
+    setTimeout(() => d20.classList.remove('rolling'), 600);
     
     const targets = card.a ? enemies : [enemies[selectedIdx]];
     targets.forEach(e => {
         if (!e) return;
-        let p = Math.floor((card.d + Player.atk) * (v === 20 ? 2.5 : v >= 10 ? 1 : 0.5));
-        if (v === 20) log("⚡ CRÍTICO DEVASTADOR!");
-        if (v === 1) { log("❌ FALHA! Você se feriu!"); Player.hp -= 10; }
+        let p = Math.floor((card.d + Player.atk) * (v === 20 ? 3 : v >= 10 ? 1.2 : 0.5));
         e.hp -= p;
         if(Player.vamp > 0) Player.hp = Math.min(Player.maxHp, Player.hp + Math.floor(p * Player.vamp));
         popDmg(p, 'enemy');
     });
     
     updateUI();
-    if(Player.mana <= 0 && Player.curses.every(c => c.c > 0)) setTimeout(manualEndTurn, 800);
-    setTimeout(checkDeaths, 600);
+    if(Player.mana <= 0) setTimeout(manualEndTurn, 1000);
+    setTimeout(checkDeaths, 650);
 }
 
 async function enemyTurn() {
     if(isTurnEnding || enemies.length === 0) return;
     isTurnEnding = true;
-    const btn = document.getElementById('end-turn-btn');
-    btn.disabled = true; btn.innerText = "TURNO INIMIGO...";
+    document.getElementById('end-turn-btn').disabled = true;
     
     const units = document.querySelectorAll('.enemy');
     for (let i = 0; i < enemies.length; i++) {
@@ -330,102 +408,84 @@ async function enemyTurn() {
         if (e && units[i]) {
             await new Promise(resolve => {
                 units[i].classList.add('enemy-atk-anim');
-                const ev = Math.floor(Math.random()*20)+1;
-                let p = Math.floor(e.atk * (ev === 1 ? 0 : ev >= 15 ? 1.5 : 1));
-                setTimeout(() => { Player.hp -= p; popDmg(p, 'player'); updateUI(); }, 200);
+                document.getElementById('game-container').classList.add('screen-shake');
+                setTimeout(() => {
+                    const p = Math.floor(e.atk);
+                    Player.hp -= p; popDmg(p, 'player'); updateUI();
+                    document.getElementById('game-container').classList.remove('screen-shake');
+                }, 250);
                 setTimeout(() => { units[i].classList.remove('enemy-atk-anim'); resolve(); }, 800);
             });
         }
     }
     Player.mana = Player.maxMana;
-    isTurnEnding = false; btn.disabled = false; btn.innerText = "Passar Turno";
-    if(Player.hp <= 0) { alert("💀 SUA ALMA FOI CONSUMIDA."); location.reload(); }
+    isTurnEnding = false; document.getElementById('end-turn-btn').disabled = false;
+    if(Player.hp <= 0) { alert("💀 SUA HISTÓRIA TERMINOU NO ABISMO."); location.reload(); }
     updateUI();
 }
 
 function checkDeaths() {
     let killed = false;
     enemies = enemies.filter(e => {
-        if(e.hp <= 0) { Player.souls += 2; Player.gold += 35; Player.kills++; killed = true; return false; }
+        if(e.hp <= 0) { Player.souls += 5; Player.gold += 40; Player.kills++; killed = true; return false; }
         return true;
     });
-
     if(killed) {
-        if (Player.kills % 10 === 0) { Player.worldIdx++; openSoulTree(); }
-        else if(Player.kills % 5 === 0) openSlots();
+        log(Chronicles[Math.floor(Math.random()*Chronicles.length)]);
+        if(Player.kills % 5 === 0) openSlots();
         else openSoulTree();
-        
-        if (Math.random() < 0.25) triggerEvent();
     }
-    
     if(enemies.length === 0 && !isOverlayOpen()) spawnEnemies();
-    selectedIdx = 0;
     updateUI();
 }
 
 function manualEndTurn() { if(!isTurnEnding) enemyTurn(); }
 
-// --- SISTEMAS ---
 function spinSlots() {
-    const reels = ["🗡️", "🏹", "🪓", "🛡️", "💀", "💎"];
-    let count = 0;
+    const btn = document.getElementById('slot-spin-btn');
+    btn.disabled = true;
     const timer = setInterval(() => {
-        document.getElementById('reel-weapon').innerText = reels[Math.floor(Math.random()*reels.length)];
-        document.getElementById('reel-item').innerText = reels[Math.floor(Math.random()*reels.length)];
-        document.getElementById('reel-curse').innerText = reels[Math.floor(Math.random()*reels.length)];
-        count++;
-        if(count > 12) {
-            clearInterval(timer);
-            Player.atk += 20; Player.maxHp += 40; Player.hp = Math.min(Player.maxHp, Player.hp + 40);
-            Player.curses.push({ n: "MALDIÇÃO", d: 20, c: 0, i: "💀" });
-            document.getElementById('slot-result').innerHTML = "<b>PODER ABSORVIDO!</b><br>Atk +20, HP +40. Mas uma maldição de custo 0 agora polui seu deck.";
-            document.getElementById('slot-spin-btn').style.display = 'none';
-            document.getElementById('slot-close-btn').style.display = 'block';
-        }
-    }, 100);
+        document.getElementById('slot-arma').innerText = ["⚔️", "🔱", "🔨", "🏮"][Math.floor(Math.random()*4)];
+        document.getElementById('slot-item').innerText = ["💍", "🧬", "🛡️", "🧤"][Math.floor(Math.random()*4)];
+        document.getElementById('slot-curse').innerText = ["💀", "🧿", "⛓️", "🦠"][Math.floor(Math.random()*4)];
+    }, 80);
+    setTimeout(() => {
+        clearInterval(timer);
+        Player.atk += 35; Player.maxHp += 60; Player.hp = Player.maxHp;
+        Player.curses.push({ n: "CORROSÃO", d: 25, c: 0, i: "🧿" });
+        document.getElementById('slot-result').innerHTML = "<b>HERANÇA REIVINDICADA!</b><br>Atk +35, Vida +60. Corrosão adicionada.";
+        document.getElementById('slot-spin-btn').style.display = 'none';
+        document.getElementById('slot-close-btn').style.display = 'block';
+    }, 1500);
 }
-
-function closeSlots() { document.getElementById('slot-modal').style.display = 'none'; if(enemies.length === 0) spawnEnemies(); updateUI(); }
 
 function openSoulTree() {
     document.getElementById('soul-modal').style.display = 'flex';
     const ui = document.getElementById('soul-ui'); ui.innerHTML = '';
     SkillNodes.forEach(s => {
-        const bought = Player.skills.includes(s.id);
         const div = document.createElement('div');
-        div.className = `node ${bought ? 'bought' : ''}`;
+        div.className = `node`;
         div.innerHTML = `<b>${s.n}</b><br><small>${s.d}</small><br>${s.c} Almas`;
-        if(!bought && Player.souls >= s.c) div.onclick = () => { Player.souls -= s.c; Player.skills.push(s.id); s.f(); openSoulTree(); updateUI(); };
+        if(Player.souls >= s.c) div.onclick = () => { Player.souls -= s.c; s.f(); openSoulTree(); updateUI(); };
+        else div.style.opacity = "0.5";
         ui.appendChild(div);
     });
 }
 
-function triggerEvent() {
-    const evs = [
-        { t: "FERREIRO", d: "Afiar lâmina por 50g? (+25 Atk)", f: () => { if(Player.gold >= 50){ Player.gold-=50; Player.atk+=25; } } },
-        { t: "FONTE", d: "Beber da agonia alheia? (Recupera HP)", f: () => { Player.hp = Player.maxHp; } },
-        { t: "ESTÁTUA", d: "Sacrificar 40 HP por Mana (+1 Max)?", f: () => { Player.hp -= 40; Player.maxMana += 1; } }
-    ];
-    const e = evs[Math.floor(Math.random()*evs.length)];
-    const modal = document.getElementById('event-modal');
-    modal.style.display = 'flex';
-    document.getElementById('event-content').innerHTML = `<h3>${e.t}</h3><p>${e.d}</p><button class="btn-choice" style="background:var(--gold)" onclick="window.curEv.f(); closeModal('event-modal')">ACEITAR</button><button class="btn-choice" style="background:#444; color:white" onclick="closeModal('event-modal')">RECUSAR</button>`;
-    window.curEv = e;
-}
-
 function updateUI() {
-    document.getElementById('st-name').innerText = `${Player.name} (${Player.origin})`;
+    document.getElementById('st-name').innerText = `${Player.name} (${Player.race})`;
     document.getElementById('st-gold').innerText = Player.gold;
     document.getElementById('st-souls').innerText = Player.souls;
     document.getElementById('st-atk').innerText = `+${Player.atk}`;
+    document.getElementById('st-crit').innerText = `${Math.floor(Player.crit*100)}%`;
+    document.getElementById('st-diff').innerText = `Nível ${Player.diff}`;
     
-    const hpPerc = (Player.hp / Player.maxHp) * 100;
-    const manaPerc = (Player.mana / Player.maxMana) * 100;
-    document.getElementById('hp-fill').style.height = Math.max(0, hpPerc) + "%";
-    document.getElementById('mana-fill').style.height = Math.max(0, manaPerc) + "%";
-    document.getElementById('hp-text').innerText = `${Math.max(0, Math.floor(Player.hp))}/${Player.maxHp}`;
+    document.getElementById('hp-fill').style.height = (Player.hp/Player.maxHp)*100 + "%";
+    document.getElementById('mana-fill').style.height = (Player.mana/Player.maxMana)*100 + "%";
+    document.getElementById('hp-text').innerText = `${Math.max(0,Math.floor(Player.hp))}/${Player.maxHp}`;
     document.getElementById('mana-text').innerText = `${Player.mana}/${Player.maxMana}`;
     
+    document.getElementById('end-turn-btn').classList.toggle('stall-warning', Player.mana <= 0);
     renderEnemies(); renderHand();
 }
 
@@ -435,7 +495,7 @@ function renderEnemies() {
         const div = document.createElement('div');
         div.className = `enemy ${i === selectedIdx ? 'selected' : ''}`;
         div.onclick = () => { if(!isTurnEnding) { selectedIdx = i; renderEnemies(); } };
-        div.innerHTML = `<div class="enemy-sprite">${e.i}</div><div class="hp-bar"><div class="hp-fill" style="width:${(e.hp/e.maxHp)*100}%"></div></div>`;
+        div.innerHTML = `<div class="enemy-sprite">${e.i}</div><div class="enemy-hp-bar"><div class="enemy-hp-fill" style="width:${(e.hp/e.maxHp)*100}%"></div></div>`;
         row.appendChild(div);
     });
 }
@@ -443,21 +503,22 @@ function renderEnemies() {
 function renderHand() {
     const hand = document.getElementById('hand'); hand.innerHTML = '';
     const pool = [...Player.curses];
-    while(pool.length < 4) pool.push(Weapons[Math.floor(Math.random()*Weapons.length)]);
+    if(pool.length < 4) pool.push(Player.startWeapon);
+    while(pool.length < 4) pool.push(WeaponsPool[Object.keys(WeaponsPool)[Math.floor(Math.random()*4)]]);
+    
     pool.slice(0, 4).forEach((card, idx) => {
         const div = document.createElement('div');
         const canPlay = Player.mana >= card.c && !isTurnEnding;
-        div.className = `card ${canPlay ? 'active' : 'no-mana'} ${card.n === "MALDIÇÃO" ? 'curse' : ''}`;
+        div.className = `card ${canPlay ? 'active' : 'no-mana'} ${card.n === "CORROSÃO" ? 'curse' : ''}`;
         div.innerHTML = `<div class="card-cost">${card.c}</div><div style="font-size:35px; margin:5px 0">${card.i}</div><b>${card.n}</b><br>Dano: ${card.d+Player.atk}`;
         if(canPlay) div.onclick = () => {
-            if(card.n === "MALDIÇÃO") { Player.hp -= card.d; Player.curses.splice(idx, 1); updateUI(); }
+            if(card.n === "CORROSÃO") { Player.hp -= card.d; Player.curses.splice(idx, 1); updateUI(); }
             else playCard(card);
         };
         hand.appendChild(div);
     });
 }
 
-const AudioEngine = { init() {}, play() {}, bgm() {} };
 function log(m) { document.getElementById('narrative-log').innerText = m; }
 function popDmg(val, type) {
     const t = document.createElement('div'); t.className = 'dmg-txt'; t.innerText = `-${val}`;
@@ -465,8 +526,9 @@ function popDmg(val, type) {
     t.style.color = type==='enemy'?'#d4af37':'#f00'; document.body.appendChild(t);
     setTimeout(() => t.remove(), 1000);
 }
-function isOverlayOpen() { return document.getElementById('soul-modal').style.display === 'flex' || document.getElementById('slot-modal').style.display === 'flex' || document.getElementById('event-modal').style.display === 'flex'; }
+function isOverlayOpen() { return document.getElementById('soul-modal').style.display === 'flex' || document.getElementById('slot-modal').style.display === 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display='none'; if(enemies.length === 0) spawnEnemies(); updateUI(); }
+function closeSlots() { document.getElementById('slot-modal').style.display = 'none'; if(enemies.length === 0) spawnEnemies(); updateUI(); }
 </script>
 </body>
 </html>

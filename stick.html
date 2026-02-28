@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stickman Mobile Brawler</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; overflow: hidden; background: #1a1a1a; font-family: 'Courier New', Courier, monospace; }
+        
+        #game-container { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+        
+        canvas { background: #e0e0e0; width: 100%; height: 60%; touch-action: none; border-bottom: 4px solid #333; }
+
+        /* UI Superior */
+        #ui { position: absolute; top: 10px; left: 10px; color: #000; font-weight: bold; text-shadow: 1px 1px 0 #fff; }
+        .hp-bar-bg { width: 150px; height: 15px; background: #555; border: 2px solid #000; margin-bottom: 5px; }
+        #hp-fill { width: 100%; height: 100%; background: #ff3333; transition: width 0.2s; }
+
+        /* Controles Mobile */
+        #controls { height: 40%; display: grid; grid-template-columns: 1fr 1fr; padding: 10px; background: #222; }
+        .d-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; align-items: center; }
+        .buttons { display: flex; justify-content: space-around; align-items: center; }
+        
+        .btn { 
+            background: #444; border: 2px solid #666; border-radius: 15px; 
+            color: white; display: flex; justify-content: center; align-items: center;
+            font-size: 24px; active { background: #888; transform: scale(0.95); }
+        }
+        .btn-move { width: 70px; height: 70px; }
+        .btn-action { width: 100px; height: 100px; border-radius: 50%; background: #900; }
+        .btn-jump { background: #448; }
+
+        #game-over { 
+            display: none; position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9); color: white; padding: 20px; text-align: center; border: 2px solid red;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="ui">
+        HP: <div class="hp-bar-bg"><div id="hp-fill"></div></div>
+        SCORE: <span id="score">0</span>
+    </div>
+
+    <div id="game-over">
+        <h1>VOCÊ MORREU!</h1>
+        <button onclick="location.reload()" style="padding: 10px; cursor: pointer;">RECOMECAR</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="controls">
+        <div class="d-pad">
+            <div></div> 
+            <div class="btn btn-move btn-jump" id="btnUp">↑</div> 
+            <div></div>
+            <div class="btn btn-move" id="btnLeft">←</div>
+            <div></div>
+            <div class="btn btn-move" id="btnRight">→</div>
+        </div>
+        <div class="buttons">
+            <div class="btn btn-action" id="btnAttack">BATER</div>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const hpFill = document.getElementById("hp-fill");
+const scoreEl = document.getElementById("score");
+const gameOverEl = document.getElementById("game-over");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight * 0.6;
+
+const gravity = 0.8;
+const groundY = canvas.height - 20;
+
+let score = 0;
+let particles = [];
+let gameActive = true;
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x; this.y = y;
+        this.velX = (Math.random() - 0.5) * 8;
+        this.velY = (Math.random() - 0.5) * 8;
+        this.life = 1.0;
+        this.color = color;
+    }
+    update() {
+        this.x += this.velX; this.y += this.velY;
+        this.life -= 0.05;
+    }
+}
+
+class Stickman {
+    constructor(x, color, isPlayer) {
+        this.x = x; this.y = groundY;
+        this.color = color;
+        this.isPlayer = isPlayer;
+        this.velX = 0; this.velY = 0;
+        this.hp = 100;
+        this.isAttacking = false;
+        this.isJumping = false;
+        this.direction = 1;
+        this.attackCooldown = 0;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.strokeStyle = this.hp < 30 && !this.isPlayer ? "orange" : this.color;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+
+        // Cabeça
+        ctx.arc(0, -40, 7, 0, Math.PI * 2);
+        // Corpo
+        ctx.moveTo(0, -33); ctx.lineTo(0, -15);
+        // Braços
+        let armReach = this.isAttacking ? 25 * this.direction : 10 * this.direction;
+        ctx.moveTo(0, -28); ctx.lineTo(armReach, -25);
+        // Pernas
+        ctx.moveTo(0, -15); ctx.lineTo(-10, 0);
+        ctx.moveTo(0, -15); ctx.lineTo(10, 0);
+
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    update() {
+        this.x += this.velX;
+        this.y += this.velY;
+        if (this.attackCooldown > 0) this.attackCooldown--;
+
+        if (this.y < groundY) {
+            this.velY += gravity;
+            this.isJumping = true;
+        } else {
+            this.y = groundY;
+            this.velY = 0;
+            this.isJumping = false;
+        }
+
+        if (this.x < 15) this.x = 15;
+        if (this.x > canvas.width - 15) this.x = canvas.width - 15;
+
+        this.draw();
+    }
+
+    takeDamage(amount) {
+        this.hp -= amount;
+        for(let i=0; i<5; i++) particles.push(new Particle(this.x, this.y - 30, "red"));
+        if (this.isPlayer) hpFill.style.width = this.hp + "%";
+    }
+}
+
+const player = new Stickman(canvas.width / 2, "blue", true);
+let enemies = [];
+
+// INPUTS (PC e Mobile)
+const input = { left: false, right: false, up: false, attack: false };
+
+function setupControls() {
+    const bind = (id, field) => {
+        const el = document.getElementById(id);
+        const start = (e) => { e.preventDefault(); input[field] = true; if(field==='attack') attack(); };
+        const end = (e) => { e.preventDefault(); input[field] = false; };
+        el.addEventListener('touchstart', start); el.addEventListener('touchend', end);
+        el.addEventListener('mousedown', start); el.addEventListener('mouseup', end);
+    };
+
+    bind('btnLeft', 'left'); bind('btnRight', 'right');
+    bind('btnUp', 'up'); bind('btnAttack', 'attack');
+
+    window.onkeydown = (e) => {
+        if (e.code === 'ArrowLeft') input.left = true;
+        if (e.code === 'ArrowRight') input.right = true;
+        if (e.code === 'ArrowUp') input.up = true;
+        if (e.code === 'Space') attack();
+    };
+    window.onkeyup = (e) => {
+        if (e.code === 'ArrowLeft') input.left = false;
+        if (e.code === 'ArrowRight') input.right = false;
+        if (e.code === 'ArrowUp') input.up = false;
+    };
+}
+
+function attack() {
+    if (!gameActive) return;
+    player.isAttacking = true;
+    setTimeout(() => player.isAttacking = false, 150);
+
+    enemies.forEach((enemy, index) => {
+        let dist = Math.abs(player.x - enemy.x);
+        if (dist < 45 && player.direction === (enemy.x > player.x ? 1 : -1)) {
+            enemy.takeDamage(40);
+            enemy.velX = 10 * player.direction;
+            if (enemy.hp <= 0) {
+                enemies.splice(index, 1);
+                score += 10;
+                scoreEl.innerText = score;
+            }
+        }
+    });
+}
+
+function updateGame() {
+    if (!gameActive) return;
+
+    // Movimento Jogador
+    player.velX = 0;
+    if (input.left) { player.velX = -5; player.direction = -1; }
+    if (input.right) { player.velX = 5; player.direction = 1; }
+    if (input.up && !player.isJumping) { player.velY = -12; }
+
+    player.update();
+
+    // Inimigos
+    if (Math.random() < 0.02) enemies.push(new Stickman(Math.random() > 0.5 ? 0 : canvas.width, "red", false));
+
+    enemies.forEach(enemy => {
+        let dist = player.x - enemy.x;
+        enemy.direction = dist > 0 ? 1 : -1;
+        
+        if (Math.abs(dist) > 30) {
+            enemy.velX = enemy.direction * 2;
+        } else {
+            enemy.velX = 0;
+            // Ataque do Inimigo
+            if (enemy.attackCooldown <= 0) {
+                player.takeDamage(5);
+                enemy.attackCooldown = 60;
+                if (player.hp <= 0) { gameActive = false; gameOverEl.style.display = "block"; }
+            }
+        }
+        enemy.update();
+    });
+
+    // Partículas
+    particles = particles.filter(p => p.life > 0);
+    particles.forEach(p => {
+        p.update();
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, 3, 3);
+        ctx.globalAlpha = 1;
+    });
+}
+
+function loop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Solo
+    ctx.fillStyle = "#999";
+    ctx.fillRect(0, groundY, canvas.width, 40);
+
+    updateGame();
+    requestAnimationFrame(loop);
+}
+
+setupControls();
+loop();
+</script>
+</body>
+</html>

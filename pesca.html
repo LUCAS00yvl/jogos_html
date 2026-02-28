@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Deep Sea Pro: QTE</title>
+    <style>
+        :root {
+            --bar-border: #2ecc71;
+            --success: #00ff00;
+            --fail: #ff0000;
+        }
+        * { box-sizing: border-box; touch-action: none; user-select: none; }
+        body {
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; overflow: hidden;
+            background: #000;
+            font-family: 'Arial', sans-serif;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw; height: 100vh;
+            max-width: 500px;
+            transition: background 5s ease;
+            overflow: hidden;
+        }
+        /* HUD e Interface */
+        #hud {
+            position: absolute; top: 15px; width: 100%;
+            display: flex; justify-content: space-between; padding: 0 20px;
+            color: white; font-weight: bold; z-index: 100;
+            text-shadow: 2px 2px #000;
+        }
+        #qte-container {
+            position: absolute; top: 45%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px; height: 50px;
+            background: var(--bar-border);
+            padding: 4px; border-radius: 8px;
+            display: none; z-index: 200;
+        }
+        #qte-bar {
+            position: relative; width: 100%; height: 100%;
+            background: var(--fail); border-radius: 4px; overflow: hidden;
+        }
+        #success-zone {
+            position: absolute; height: 100%; 
+            background: var(--success); width: 15%;
+        }
+        #indicator {
+            position: absolute; top: 75%; width: 18px; height: 25px;
+            background: #f1c40f; clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            transform: translateX(-50%); z-index: 210;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container" id="sky">
+    <div id="hud">
+        <span>💰 <span id="score">0</span></span>
+        <span>❤️ Tentativas: <span id="tries">5</span></span>
+    </div>
+
+    <div id="qte-container">
+        <div id="qte-bar"><div id="success-zone"></div></div>
+        <div id="indicator"></div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const triesEl = document.getElementById('tries');
+    const qteContainer = document.getElementById('qte-container');
+    const indicator = document.getElementById('indicator');
+    const successZone = document.getElementById('success-zone');
+    const container = document.getElementById('game-container');
+
+    let width, height;
+    let camera = { zoom: 1, targetZoom: 1 };
+    let timeOfDay = 0; // 0: Dia, 1: Tarde, 2: Noite
+    
+    function resize() {
+        width = canvas.width = window.innerWidth > 500 ? 500 : window.innerWidth;
+        height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Estados
+    let score = 0, tries = 5;
+    let hook = { x: width/2, y: 150, state: 'idle', speed: 12 };
+    let fishes = [];
+    let caughtFish = null;
+    
+    // QTE
+    let qteActive = false, qtePos = 0, qteDir = 1, targetRange = { min: 0, max: 0 };
+
+    const fishIcons = ['🐟', '🐠', '🐡', '🦈', '🦑'];
+
+    class Fish {
+        constructor(isCaught = false) {
+            this.icon = fishIcons[Math.floor(Math.random() * fishIcons.length)];
+            this.x = Math.random() > 0.5 ? -50 : width + 50;
+            this.y = Math.random() * (height * 0.6) + (height * 0.3);
+            this.speed = (Math.random() * 2 + 1) * (this.x < 0 ? 1 : -1);
+            this.caught = isCaught;
+        }
+        draw() {
+            ctx.font = "35px Arial";
+            ctx.fillText(this.icon, this.x - 17, this.y + 10);
+        }
+    }
+
+    function updateEnvironment() {
+        const cycle = [
+            'linear-gradient(#57c1ff, #1e90ff, #0a192f)', // Dia
+            'linear-gradient(#ff7e5f, #feb47b, #2c3e50)', // Tarde
+            'linear-gradient(#0f0c29, #302b63, #24243e)'  // Noite
+        ];
+        container.style.background = cycle[timeOfDay];
+        timeOfDay = (timeOfDay + 1) % cycle.length;
+    }
+    setInterval(updateEnvironment, 15000); // Muda o tempo a cada 15s
+    updateEnvironment();
+
+    function startQTE(fish) {
+        caughtFish = fish;
+        qteActive = true;
+        qtePos = 0;
+        const start = 10 + Math.random() * 70;
+        targetRange = { min: start, max: start + 15 };
+        successZone.style.left = start + "%";
+        qteContainer.style.display = 'block';
+        camera.targetZoom = 2.2;
+    }
+
+    function checkQTE() {
+        if(!qteActive) return;
+        if(qtePos >= targetRange.min && qtePos <= targetRange.max) {
+            score += 50;
+            scoreEl.innerText = score;
+            hook.state = 'reeling'; // Sobe com o peixe
+            qteActive = false;
+            qteContainer.style.display = 'none';
+        } else {
+            tries--;
+            triesEl.innerText = tries;
+            if(tries <= 0) resetGame();
+            else {
+                qteActive = false;
+                qteContainer.style.display = 'none';
+                camera.targetZoom = 1;
+                hook.state = 'retracting';
+            }
+        }
+    }
+
+    function resetGame() {
+        alert("Fim de Jogo! Pontos: " + score);
+        score = 0; tries = 5;
+        scoreEl.innerText = "0"; triesEl.innerText = "5";
+        finishAction();
+    }
+
+    function finishAction() {
+        qteActive = false;
+        qteContainer.style.display = 'none';
+        camera.targetZoom = 1;
+        hook.state = 'retracting';
+        caughtFish = null;
+    }
+
+    window.addEventListener('mousedown', () => qteActive ? checkQTE() : (hook.state === 'idle' && (hook.state = 'dropping')));
+
+    function update() {
+        camera.zoom += (camera.targetZoom - camera.zoom) * 0.1;
+        ctx.save();
+        ctx.translate(width/2, height/2);
+        ctx.scale(camera.zoom, camera.zoom);
+        ctx.translate(-hook.x, -hook.y);
+
+        ctx.clearRect(hook.x - width, hook.y - height, width*2, height*2);
+
+        // Nível do mar e Barco
+        ctx.font = "60px Arial";
+        ctx.fillText("🚤", width/2 - 30, 140); 
+
+        // Linha e Anzol
+        ctx.strokeStyle = "rgba(255,255,255,0.7)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(hook.x, 140);
+        ctx.lineTo(hook.x, hook.y);
+        ctx.stroke();
+        ctx.fillText("🪝", hook.x - 15, hook.y + 15);
+
+        // Peixe fisgado subindo
+        if(hook.state === 'reeling' && caughtFish) {
+            ctx.fillText(caughtFish.icon, hook.x - 17, hook.y + 45);
+            hook.y -= 8;
+            if(hook.y <= 150) finishAction();
+        }
+
+        // Lógica do Anzol
+        if(!qteActive && hook.state !== 'reeling') {
+            if(hook.state === 'dropping') {
+                hook.y += 10;
+                if(hook.y > height - 50) hook.state = 'retracting';
+            } else if(hook.state === 'retracting') {
+                hook.y -= 10;
+                if(hook.y <= 150) hook.state = 'idle';
+            }
+        }
+
+        // Peixes nadando
+        if(Math.random() < 0.02) fishes.push(new Fish());
+        fishes.forEach((f, i) => {
+            f.x += f.speed;
+            f.draw();
+            if(!qteActive && hook.state === 'dropping' && Math.hypot(hook.x - f.x, hook.y - f.y) < 30) {
+                fishes.splice(i, 1);
+                startQTE(f);
+            }
+        });
+
+        ctx.restore();
+
+        if(qteActive) {
+            qtePos += 2 * qteDir;
+            if(qtePos > 100 || qtePos < 0) qteDir *= -1;
+            indicator.style.left = qtePos + "%";
+        }
+
+        requestAnimationFrame(update);
+    }
+    update();
+</script>
+</body>
+</html>

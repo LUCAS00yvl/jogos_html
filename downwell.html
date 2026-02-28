@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Downwell Mobile Pro</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Courier New', Courier, monospace; touch-action: none; user-select: none; }
+        canvas { display: block; image-rendering: pixelated; }
+        
+        #ui { position: absolute; top: 10px; width: 100%; text-align: center; color: #fff; pointer-events: none; z-index: 10; }
+        .stat { display: inline-block; margin: 0 10px; font-size: 16px; }
+
+        /* Controles Mobile */
+        .controls { position: absolute; bottom: 20px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 20; }
+        .btn { width: 70px; height: 70px; background: rgba(255,255,255,0.2); border: 2px solid #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 24px; }
+        .btn:active { background: rgba(255,255,255,0.5); }
+        .d-pad { display: flex; gap: 10px; }
+
+        /* Loja */
+        #shop { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #000; border: 4px solid #fff; padding: 20px; color: #fff;
+            display: none; text-align: center; z-index: 30; width: 80%;
+        }
+        .shop-item { background: #333; margin: 10px 0; padding: 15px; border: 2px solid #ff0; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div class="stat">HP: <span id="hp">3</span></div>
+        <div class="stat">AMMO: <span id="ammo">8</span></div>
+        <div class="stat">DEPTH: <span id="depth">0</span>m</div>
+    </div>
+
+    <div id="shop">
+        <h2>LOJA DE UPGRADES</h2>
+        <p>Escolha um benefício:</p>
+        <div class="shop-item" onclick="buyUpgrade('hp')">+1 VIDA</div>
+        <div class="stat">--- OU ---</div>
+        <div class="shop-item" onclick="buyUpgrade('ammo')">+4 MUNIÇÃO MÁX</div>
+    </div>
+
+    <div class="controls">
+        <div class="d-pad">
+            <div class="btn" id="left">←</div>
+            <div class="btn" id="right">→</div>
+        </div>
+        <div class="btn" id="jump">▲</div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// --- ESTADO ---
+let depth = 0;
+let nextShop = 1000;
+let isPaused = false;
+let shake = 0;
+
+const player = {
+    x: canvas.width/2, y: 100, w: 25, h: 25,
+    vx: 0, vy: 0, speed: 6,
+    hp: 3, ammo: 8, maxAmmo: 8,
+    bullets: [], input: { left: false, right: false }
+};
+
+let platforms = [];
+let enemies = [];
+for (let i = 0; i < 7; i++) spawnPlatform(i * 160 + 400);
+
+// --- CONTROLES ---
+const bind = (id, key) => {
+    const el = document.getElementById(id);
+    el.addEventListener('touchstart', (e) => { e.preventDefault(); if(id==='jump') shoot(); else player.input[key] = true; });
+    el.addEventListener('touchend', () => { if(id!=='jump') player.input[key] = false; });
+};
+bind('left', 'left'); bind('right', 'right'); bind('jump', 'jump');
+
+function shoot() {
+    if (isPaused) return;
+    if (player.ammo > 0) {
+        player.vy = -7;
+        player.bullets.push({x: player.x + 8, y: player.y + 25});
+        player.ammo--;
+        shake = 8;
+        updateUI();
+    }
+}
+
+// --- LOJA ---
+function checkShop() {
+    if (depth >= nextShop) {
+        isPaused = true;
+        document.getElementById('shop').style.display = 'block';
+        nextShop += 1000;
+    }
+}
+
+function buyUpgrade(type) {
+    if (type === 'hp') player.hp++;
+    if (type === 'ammo') player.maxAmmo += 4;
+    player.ammo = player.maxAmmo;
+    isPaused = false;
+    document.getElementById('shop').style.display = 'none';
+    updateUI();
+}
+
+function updateUI() {
+    document.getElementById('hp').innerText = player.hp;
+    document.getElementById('ammo').innerText = player.ammo;
+    document.getElementById('depth').innerText = depth;
+}
+
+function spawnPlatform(y) {
+    platforms.push({ x: Math.random()*(canvas.width-80), y: y, w: 80, h: 15 });
+}
+
+function update() {
+    if (isPaused) return;
+
+    // Movimento Lateral
+    if (player.input.left) player.vx = -player.speed;
+    else if (player.input.right) player.vx = player.speed;
+    else player.vx *= 0.8;
+
+    player.vy += 0.45;
+    player.x += player.vx;
+    player.y += player.vy;
+
+    // Limites de tela
+    if (player.x < 0) player.x = 0;
+    if (player.x > canvas.width - player.w) player.x = canvas.width - player.w;
+
+    // Scroll
+    if (player.y > canvas.height / 2) {
+        let diff = player.y - canvas.height / 2;
+        player.y = canvas.height / 2;
+        depth += Math.floor(diff * 0.1);
+        platforms.forEach(p => p.y -= diff);
+        enemies.forEach(e => e.y -= diff);
+        player.bullets.forEach(b => b.y -= diff);
+        updateUI();
+        checkShop();
+        if (Math.random() < 0.02) enemies.push({x: Math.random()*(canvas.width-30), y: canvas.height+50, w: 30, h: 30});
+    }
+
+    // Colisões
+    platforms.forEach((p, i) => {
+        if (p.y < -20) { platforms.splice(i, 1); spawnPlatform(canvas.height+50); }
+        if (player.vy > 0 && player.x < p.x + p.w && player.x + player.w > p.x &&
+            player.y + player.h > p.y && player.y + player.h < p.y + p.h + player.vy) {
+            player.vy = 0; player.y = p.y - player.h;
+            player.ammo = player.maxAmmo; updateUI();
+        }
+    });
+
+    enemies.forEach((en, i) => {
+        en.y -= 1.5;
+        if (player.vy > 0 && player.x < en.x + en.w && player.x + player.w > en.x &&
+            player.y + player.h > en.y && player.y + player.h < en.y + en.h) {
+            enemies.splice(i, 1); player.vy = -10; // Stomp
+        } else if (player.x < en.x+en.w && player.x+player.w > en.x && player.y < en.y+en.h && player.y+player.h > en.y) {
+            player.hp--; updateUI(); enemies.splice(i, 1);
+            if(player.hp <= 0) location.reload();
+        }
+    });
+
+    player.bullets.forEach((b, i) => {
+        b.y += 12;
+        if (b.y > canvas.height) player.bullets.splice(i, 1);
+    });
+
+    if (shake > 0) shake--;
+}
+
+function draw() {
+    ctx.save();
+    if (shake > 0) ctx.translate(Math.random()*shake - shake/2, Math.random()*shake - shake/2);
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = "#fff"; ctx.fillRect(player.x, player.y, player.w, player.h);
+    ctx.fillStyle = "#fff"; platforms.forEach(p => ctx.fillRect(p.x, p.y, p.w, p.h));
+    ctx.fillStyle = "#f00"; enemies.forEach(en => ctx.fillRect(en.x, en.y, en.w, en.h));
+    ctx.fillStyle = "#f00"; player.bullets.forEach(b => ctx.fillRect(b.x, b.y, 8, 16));
+    ctx.restore();
+}
+
+function loop() { update(); draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>
