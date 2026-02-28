@@ -1,15 +1,105 @@
-<a href="crawler.html">Vampire Crawlers</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="arcade.css">
+    <title>Lucas Arcade Station</title>
+</head>
+<body>
 
-<a href="isaac.html">The Binding of Isaac</a>
+    <div class="scanlines"></div>
 
-<a href="downwell.html">Downwell</a>
+    <h1 class="title">LUCAS ARCADE STATION</h1>
+    <br><br>
 
-<a href="pesca.html">Fishing Time</a>
+    <div class="container">
+        <a href="crawler.html" class="game-card">
+            <span class="game-title">Vampire Crawlers</span>
+            <img src="img/vamp.jpg" alt="Vampire Crawlers Capa" class="game-cover">
+        </a>
 
-<a href="plataforma.html">Scourge Dash</a>
+        <a href="isaac.html" class="game-card">
+            <span class="game-title">The Binding of Isaac</span>
+            <img src="img/tboi.jpg" alt="Isaac Capa" class="game-cover">
+        </a>
 
-<a href="poker.html">Balasso</a>
+        <a href="downwell.html" class="game-card">
+            <span class="game-title">Downwell</span>
+            <img src="img/downwell.jpg" alt="Downwell Capa" class="game-cover">
+        </a>
 
-<a href="stick.html">Stick It To The Stickman</a>
+        <a href="pesca.html" class="game-card">
+            <span class="game-title">Fishing Time</span>
+            <img src="img/pesca.webp" alt="Fishing Time Capa" class="game-cover">
+        </a>
 
-<a href="rogue.html">Seraph's Cells</a>
+        <a href="plataforma.html" class="game-card">
+            <span class="game-title">Scourge Dash</span>
+            <img src="img/scourge.jpg" alt="Scourge Dash Capa" class="game-cover">
+        </a>
+
+        <a href="poker.html" class="game-card">
+            <span class="game-title">Balasso</span>
+            <img src="img/poker.png" alt="Balasso Capa" class="game-cover">
+        </a>
+
+        <a href="stick.html" class="game-card">
+            <span class="game-title">Stick It To The Stickman</span>
+            <img src="img/stick.jpg" alt="Stick It To The Stickman Capa" class="game-cover">
+        </a>
+
+        <a href="rogue.html" class="game-card">
+            <span class="game-title">Seraph's Cells</span>
+            <img src="img/seraph.jpg" alt="Seraph's Cells Capa" class="game-cover">
+        </a>
+    </div>
+
+    <audio id="bgMusic" loop>
+        <source src="trilha_sonora.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="hoverSound">
+        <source src="som_hover.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="clickSound">
+        <source src="som_click.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const bgMusic = document.getElementById('bgMusic');
+        const hoverSound = document.getElementById('hoverSound');
+        const clickSound = document.getElementById('clickSound');
+        const cards = document.querySelectorAll('.game-card');
+
+        // Volume da trilha baixo para não atrapalhar
+        bgMusic.volume = 0.3; 
+
+        // Ativar áudio na primeira interação do usuário
+        document.body.addEventListener('click', function() {
+            if (bgMusic.paused) {
+                bgMusic.play();
+            }
+        }, { once: true }); // Executa apenas uma vez
+
+        // Adicionar sons aos cards
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                // Reinicia o som se já estiver tocando
+                hoverSound.currentTime = 0;
+                hoverSound.play().catch(e => console.log("Áudio bloqueado pelo navegador até interação."));
+            });
+
+            card.addEventListener('click', (e) => {
+                // Pequeno delay para o som tocar antes de mudar de página
+                e.preventDefault(); 
+                clickSound.play();
+                setTimeout(() => {
+                    window.location.href = card.href;
+                }, 300); // 300ms de delay
+            });
+        });
+    </script>
+    <br>
+    <p>Feito por Lucas Gabriel Correia, Todos os direitos reservados © 2026</p>
+</body>
+</html>

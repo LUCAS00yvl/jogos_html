@@ -1,0 +1,172 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* --- Reset e Estrutura --- */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+    background: #000;
+}
+
+body {
+    padding: 20px;
+    font-family: 'Press+Start+2P', cursive;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+    min-height: 100vh;
+    box-sizing: border-box;
+    background: linear-gradient(125deg, #000000, #0a0a2e, #1a0033, #000000);
+    background-size: 400% 400%;
+    animation: spaceGradient 15s ease infinite;
+}
+
+/* --- Scanlines --- */
+.scanlines {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 4px, 3px 100%;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+/* --- Título --- */
+.title {
+    margin-top: 40px; margin-bottom: 60px;
+    font-size: 30px; text-align: center;
+    color: #fff;
+    text-shadow: 2px 2px 0px #ff00ff, -2px -2px 0px #00ffff;
+    animation: titleFloat 4s ease-in-out infinite;
+}
+
+/* --- Container dos Cards --- */
+.container {
+    width: 100%;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-right: 450px; /* Garante que a lista não bata na capa */
+    align-self: center;
+}
+
+/* --- Game Card --- */
+.game-card {
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border: 2px solid #444;
+    border-radius: 15px; /* Bordas arredondadas nos cards */
+    display: flex;
+    align-items: center;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.game-title {
+    color: #00ff00;
+    font-size: 15px;
+    text-transform: uppercase;
+}
+
+/* --- A MÁGICA: Capas Fixas no Spot de Preview --- */
+.game-cover {
+    position: fixed;     /* Trava a imagem na tela, independente do scroll ou posição do card */
+    top: 50%;            /* Centraliza verticalmente na tela */
+    left: 75%;           /* Posiciona no lado direito da tela */
+    width: 380px;        /* Largura baseada no seu print */
+    height: 520px;       /* Altura proporcional */
+    object-fit: cover;   /* Garante que a imagem preencha o espaço sem distorcer */
+    
+    border: 4px solid #fff;
+    border-radius: 20px;
+    z-index: 100;
+    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+
+    /* Estado Inicial para a Animação */
+    opacity: 0;
+    visibility: hidden;
+    /* Começa um pouco mais para a direita (50px) e menor (scale 0.7) */
+    transform: translate(-50%, -50%) translateX(50px) scale(0.7);
+    
+    /* Transição suave para o deslize e aumento */
+    transition: 
+        opacity 0.3s ease, 
+        visibility 0.3s, 
+        transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    
+    pointer-events: none; /* Evita que a imagem bloqueie cliques nos cards */
+}
+
+/* --- Hover: Ativando a Animação --- */
+.game-card:hover .game-cover {
+    opacity: 1;
+    visibility: visible;
+    /* Finaliza no centro do spot, sem o deslocamento lateral e em tamanho real */
+    transform: translate(-50%, -50%) translateX(0) scale(1);
+    animation: coverGlow 1.5s infinite alternate;
+}
+
+/* --- Ajuste no Container --- */
+.container {
+    width: 100%;
+    max-width: 450px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-right: 500px; /* Aumentei o espaço para a lista não encostar na capa */
+    align-self: center;
+}
+
+/* Reafirmando o arredondamento dos cards */
+.game-card {
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 20px;
+    border: 2px solid #444;
+    border-radius: 15px; /* Bordas arredondadas nos cards */
+    display: flex;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+/* Quando der hover no card, a capa dele aparece no spot fixo */
+.game-card:hover .game-cover {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+    animation: coverGlow 1.5s infinite alternate;
+}
+
+.game-card:hover::before {
+    content: "▶";
+    color: #00ff00;
+    margin-right: 15px;
+}
+
+/* Animações */
+@keyframes titleFloat {
+    0%, 100% { transform: translateY(0) rotate(-1deg); }
+    50% { transform: translateY(-15px) rotate(1deg); }
+}
+
+@keyframes spaceGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes coverGlow {
+    from { box-shadow: 0 0 20px rgba(0, 255, 0, 0.4); }
+    to { box-shadow: 0 0 50px rgba(0, 255, 0, 0.8), 0 0 10px #fff; }
+}
+
+/* Responsividade */
+@media (max-width: 1100px) {
+    .container { margin-right: 0; }
+    .game-cover { display: none; } /* Esconde a capa em telas pequenas para não bugar */
+}
