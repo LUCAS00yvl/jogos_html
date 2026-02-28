@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Isaac Blocks: Rebirth Edition</title>
+    <title>Isaac Blocks: Roguelike Edition</title>
     <style>
         :root { --bg: #0a0a0a; --paper: #dcd0b8; --ink: #2b2b2b; --accent: #ff4d4d; }
         body { 
             display: flex; flex-direction: column; justify-content: center; align-items: center; 
             height: 100vh; margin: 0; background-color: #000; color: #eee; 
             font-family: 'Courier New', Courier, monospace; overflow: hidden; touch-action: none;
+            user-select: none;
         }
         
-        /* MENU CLÁSSICO "WHO AM I?" */
         #menu {
             position: absolute; inset: 0; background: #050505;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             z-index: 1000;
         }
-        #menu h1 { font-size: 36px; color: #fff; text-shadow: 2px 2px #555; margin-bottom: 30px; letter-spacing: 2px; }
+        #menu h1 { font-size: 36px; color: #fff; text-shadow: 2px 2px #555; margin-bottom: 20px; letter-spacing: 2px; }
+        .controls-info { color: #888; font-size: 14px; margin-bottom: 20px; text-align: center; line-height: 1.5; }
         
         .char-selector { display: flex; align-items: center; gap: 20px; }
         .nav-btn { background: none; border: none; color: #555; font-size: 50px; cursor: pointer; transition: 0.2s; }
@@ -28,8 +29,7 @@
         .paper-card {
             background: var(--paper); color: var(--ink); width: 220px; height: 320px; padding: 20px;
             border-radius: 2px; box-shadow: 0 0 20px rgba(0,0,0,0.8), inset 0 0 50px rgba(0,0,0,0.1);
-            display: flex; flex-direction: column; align-items: center; position: relative;
-            transform: rotate(-2deg);
+            display: flex; flex-direction: column; align-items: center; position: relative; transform: rotate(-2deg);
         }
         
         .avatar-display { width: 80px; height: 80px; border-radius: 50%; border: 4px solid #000; margin-top: 10px; box-shadow: 5px 5px 0 rgba(0,0,0,0.2); }
@@ -38,13 +38,12 @@
         .hearts { color: var(--accent); }
 
         #start-btn {
-            margin-top: 40px; background: transparent; border: 3px solid #fff; color: #fff;
+            margin-top: 30px; background: transparent; border: 3px solid #fff; color: #fff;
             padding: 10px 40px; font-size: 24px; font-family: 'Courier New', Courier, monospace;
             font-weight: bold; cursor: pointer; transition: 0.2s;
         }
         #start-btn:hover { background: #fff; color: #000; }
 
-        /* UI DO JOGO */
         #ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 100; }
         #item-banner {
             position: absolute; top: -150px; left: 50%; transform: translateX(-50%);
@@ -57,10 +56,9 @@
         canvas { 
             border: 4px solid #222; background: #000; 
             max-width: 95vw; max-height: 80vh; 
-            image-rendering: pixelated; border-radius: 8px;
+            image-rendering: pixelated; border-radius: 8px; cursor: crosshair;
         }
 
-        /* CONTROLES MOBILE */
         .controls {
             position: absolute; bottom: 20px; width: 100%; height: 140px;
             display: flex; justify-content: space-between; padding: 0 30px; box-sizing: border-box;
@@ -73,11 +71,14 @@
         @media (min-width: 1024px) { .controls { display: none; } }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
     <div id="menu">
-        <h1 style="color: #666; font-size: 16px; margin-bottom: 10px;">PC: WASD (Mover) | SETAS (Atirar)</h1>
         <h1>WHO AM I?</h1>
+        <div class="controls-info">
+            PC: WASD (Mover) | MOUSE (Mirar e Atirar) | SETAS (Opcional)<br>
+            MOBILE: Use os Joysticks Virtuais na tela.
+        </div>
         <div class="char-selector">
             <button class="nav-btn" onclick="changeChar(-1)">&#9664;</button>
             <div class="paper-card">
@@ -111,7 +112,53 @@
     </div>
 
     <script>
-        // --- DADOS DOS PERSONAGENS BASEADOS NA WIKI ---
+        // --- ÁUDIO PROCEDURAL (Sintetizador Web Audio API) ---
+        let audioCtx;
+        function initAudio() {
+            if(audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Drone de fundo (Frequência baixa e sombria)
+            const drone = audioCtx.createOscillator();
+            const droneGain = audioCtx.createGain();
+            drone.type = 'triangle';
+            drone.frequency.value = 65.41; // Nota C2
+            droneGain.gain.value = 0.05;
+            drone.connect(droneGain); droneGain.connect(audioCtx.destination);
+            drone.start();
+
+            // Arpejo Aleatório Assustador
+            setInterval(() => {
+                if(game.active) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    const notes = [130.81, 155.56, 196.00, 233.08]; // C3, Eb3, G3, Bb3 (Acorde Menor 7)
+                    osc.frequency.value = notes[Math.floor(Math.random()*notes.length)];
+                    
+                    gain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+                    
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.start(); osc.stop(audioCtx.currentTime + 1.5);
+                }
+            }, 800);
+        }
+
+        function playSoundHit() {
+            if(!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        // --- DADOS DOS PERSONAGENS ---
         const CHARACTERS = [
             { id: 'isaac', name: 'ISAAC', hp: 3, speed: 4.0, dmg: 3.50, fireRate: 25, range: 45, wep: 'tear', color: '#ffccb3', fly: false },
             { id: 'maggy', name: 'MAGGY', hp: 4, speed: 3.0, dmg: 3.50, fireRate: 25, range: 45, wep: 'tear', color: '#ffb3ba', fly: false },
@@ -149,18 +196,34 @@
         });
         updateMenuDisplay();
 
-        // --- SISTEMA CORE DO JOGO ---
+        // --- CORE DO JOGO ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const TILE = 50, GRID_W = 18, GRID_H = 12;
 
-        let player, enemies = [], projectiles = [], enemyProjectiles = [], particles = [], pickups = [], upgrade = null;
-        let game = { floor: 1, active: false, palette: null, state: 'playing', trapdoor: null };
-        let currentMap = [];
+        let player, enemies = [], projectiles = [], enemyProjectiles = [], particles = [], pickups = [];
+        let game = { floor: 1, active: false, palette: null, state: 'playing', mapGrid: null, rooms: [], currentRoom: null };
+        let itemPool = [];
 
         const moveIn = { x: 0, y: 0, id: null };
         const shootIn = { x: 0, y: 0, id: null };
         const keys = {};
+        
+        // Mouse Input
+        let mouseAim = { active: false, x: 0, y: 0 };
+        canvas.addEventListener('mousedown', e => { mouseAim.active = true; updateMouseAim(e); });
+        canvas.addEventListener('mousemove', e => { if(mouseAim.active) updateMouseAim(e); });
+        canvas.addEventListener('mouseup', e => { mouseAim.active = false; shootIn.x = 0; shootIn.y = 0; });
+        
+        function updateMouseAim(e) {
+            const rect = canvas.getBoundingClientRect();
+            const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const my = (e.clientY - rect.top) * (canvas.height / rect.height);
+            const dx = mx - player.x;
+            const dy = my - player.y;
+            const dist = Math.hypot(dx, dy) || 1;
+            shootIn.x = dx / dist; shootIn.y = dy / dist;
+        }
 
         window.addEventListener('keydown', e => keys[e.code] = true);
         window.addEventListener('keyup', e => keys[e.code] = false);
@@ -171,10 +234,12 @@
                 moveIn.y = keys['KeyS'] ? 1 : (keys['KeyW'] ? -1 : 0);
             } else if (moveIn.id === null) { moveIn.x = 0; moveIn.y = 0; }
 
+            // Setas sobrepõem o mouse se pressionadas
             if (keys['ArrowRight'] || keys['ArrowLeft'] || keys['ArrowDown'] || keys['ArrowUp']) {
                 shootIn.x = keys['ArrowRight'] ? 1 : (keys['ArrowLeft'] ? -1 : 0);
                 shootIn.y = keys['ArrowDown'] ? 1 : (keys['ArrowUp'] ? -1 : 0);
-            } else if (shootIn.id === null) { shootIn.x = 0; shootIn.y = 0; }
+                mouseAim.active = false;
+            } else if (shootIn.id === null && !mouseAim.active) { shootIn.x = 0; shootIn.y = 0; }
         }
 
         function setupJoy(baseId, knobId, input) {
@@ -205,20 +270,59 @@
             5: { floor: "#3a1515", wall: "#1a0505", rock: "#5a2525", spike: "#a55", name: "DEPTHS" }
         };
 
-        const ITEMS = [
-            { n: "SAD ONION", s: "TEARS UP", color: "#ddd", f: (p) => p.fireRate = Math.max(5, p.fireRate-8) },
-            { n: "PENTAGRAM", s: "DMG UP", color: "#a22", f: (p) => p.dmg += 1.0 },
-            { n: "MAGIC MUSHROOM", s: "ALL STATS UP", color: "#f55", f: (p) => { p.dmg += 0.5; p.speed += 0.5; p.hp++; p.max++; p.tearScale *= 1.2; p.range += 10; } },
-            { n: "THE HALO", s: "ALL STATS UP", color: "#ff0", f: (p) => { p.dmg += 0.3; p.speed += 0.2; p.hp++; p.max++; p.fireRate -= 2; } },
-            { n: "BLOOD OF THE MARTYR", s: "DMG UP", color: "#900", f: (p) => p.dmg += 1.0 },
-            { n: "SPOON BENDER", s: "HOMING TEARS", color: "#a5e", f: (p) => p.homing = true },
-            { n: "POLYPHEMUS", s: "MEGA TEARS", color: "#eef", f: (p) => { p.dmg += 5.0; p.fireRate += 30; p.tearScale = 2.5; } },
-            { n: "NUMBER ONE", s: "TEARS UP", color: "#ff0", f: (p) => { p.fireRate = Math.max(5, p.fireRate - 12); p.range -= 20; } },
-            { n: "20/20", s: "DOUBLE SHOT", color: "#eee", f: (p) => p.multiShot = 2 },
-            { n: "MUTANT SPIDER", s: "QUAD SHOT", color: "#5a5", f: (p) => p.multiShot = 4 },
-            { n: "BRIMSTONE", s: "BLOOD LASER BARRAGE", color: "#200", f: (p) => { p.wep = 'laser'; p.dmg += 2.0; p.fireRate += 15; p.color = '#111'; p.range = Math.max(p.range, 30); } },
-            { n: "CUBE OF MEAT", s: "ORBITAL", color: "#a33", f: (p) => p.orbitals.push(new Orbital(p.orbitals.length)) }
+        const ITEMS_DB = [
+            { n: "SAD ONION", s: "TEARS UP", f: (p) => p.fireRate = Math.max(5, p.fireRate-6) },
+            { n: "PENTAGRAM", s: "DMG UP", f: (p) => p.dmg += 1.0 },
+            { n: "MAGIC MUSHROOM", s: "ALL STATS UP", f: (p) => { p.dmg += 0.5; p.speed += 0.5; p.hp++; p.max++; p.tearScale *= 1.2; p.range += 10; p.sizeScale = 1.3; } },
+            { n: "THE HALO", s: "ALL STATS UP", f: (p) => { p.dmg += 0.3; p.speed += 0.2; p.hp++; p.max++; p.fireRate -= 2; } },
+            { n: "BLOOD OF THE MARTYR", s: "DMG UP", f: (p) => p.dmg += 1.2 },
+            { n: "SPOON BENDER", s: "HOMING TEARS", f: (p) => p.homing = true },
+            { n: "POLYPHEMUS", s: "MEGA TEARS", f: (p) => { p.dmg += 5.0; p.fireRate += 30; p.tearScale = 2.5; } },
+            { n: "NUMBER ONE", s: "TEARS UP", f: (p) => { p.fireRate = Math.max(5, p.fireRate - 12); p.range -= 20; } },
+            { n: "20/20", s: "DOUBLE SHOT", f: (p) => p.multiShot = 2 },
+            { n: "MUTANT SPIDER", s: "QUAD SHOT", f: (p) => p.multiShot = 4 },
+            { n: "BRIMSTONE", s: "BLOOD LASER", f: (p) => { p.wep = 'laser'; p.dmg += 2.0; p.fireRate += 15; p.color = '#211'; p.range = Math.max(p.range, 30); } },
+            { n: "CUBE OF MEAT", s: "ORBITAL", f: (p) => p.orbitals.push(new Orbital(p.orbitals.length)) },
+            { n: "BREAKFAST", s: "HP UP", f: (p) => { p.max++; p.hp++; } },
+            { n: "CUPID'S ARROW", s: "PIERCING TEARS", f: (p) => p.piercing = true },
+            { n: "OUIJA BOARD", s: "SPECTRAL TEARS", f: (p) => p.spectral = true },
+            { n: "LORD OF THE PIT", s: "FLIGHT", f: (p) => { p.fly = true; p.speed += 0.3; } },
+            { n: "MOM'S KNIFE", s: "MELEE COMBAT", f: (p) => { p.wep = 'knife'; p.dmg += 3.0; } },
+            { n: "SACRED HEART", s: "HOMING + DMG UP", f: (p) => { p.homing = true; p.dmg *= 2.3; p.tearScale = 1.5; p.fireRate += 10; p.hp++; p.max++; } },
+            { n: "SMALL ROCK", s: "DMG UP, SPD DOWN", f: (p) => { p.dmg += 1.0; p.speed -= 0.2; } }
         ];
+
+        // Custom drawing functions for items on pedestal
+        function drawItemSprite(ctx, name, x, y) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.lineWidth = 2; ctx.strokeStyle = "#000";
+            
+            if(name === "SAD ONION") {
+                ctx.fillStyle = "#eee"; ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = "#5cf"; ctx.fillRect(-5, 0, 2, 6); ctx.fillRect(3, 0, 2, 6); // Lágrimas
+            } else if(name === "PENTAGRAM" || name === "BLOOD OF THE MARTYR") {
+                ctx.fillStyle = "#a22"; ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+            } else if(name === "THE HALO") {
+                ctx.strokeStyle = "#ff0"; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(0, 0, 12, 4, 0, 0, Math.PI*2); ctx.stroke();
+            } else if(name === "BRIMSTONE") {
+                ctx.fillStyle = "#111"; ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.strokeStyle = "#a22"; ctx.beginPath(); ctx.moveTo(-5, -8); ctx.lineTo(-10, -15); ctx.stroke();
+            } else if(name === "MAGIC MUSHROOM") {
+                ctx.fillStyle = "#fff"; ctx.fillRect(-4, 0, 8, 10); ctx.strokeRect(-4, 0, 8, 10);
+                ctx.fillStyle = "#f55"; ctx.beginPath(); ctx.arc(0, 0, 10, Math.PI, 0); ctx.fill(); ctx.stroke();
+            } else if(name === "MOM'S KNIFE") {
+                ctx.fillStyle = "#aaa"; ctx.beginPath(); ctx.moveTo(-8, 8); ctx.lineTo(10, -10); ctx.lineTo(6, 6); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = "#632"; ctx.fillRect(-10, 6, 6, 6);
+            } else if(name === "SACRED HEART") {
+                ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(-4, -2, 6, Math.PI, 0); ctx.arc(4, -2, 6, Math.PI, 0); ctx.lineTo(0, 10); ctx.fill(); ctx.stroke();
+            } else {
+                // Genérico
+                ctx.fillStyle = "#ff0"; ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = "#000"; ctx.fillText("?", -4, 4);
+            }
+            ctx.restore();
+        }
 
         class Orbital {
             constructor(index) { this.angle = index * Math.PI; this.dist = 40; }
@@ -240,6 +344,10 @@
                     ctx.beginPath();
                     ctx.arc(this.x-5, this.y+this.floatY, 5, Math.PI, 0); ctx.arc(this.x+5, this.y+this.floatY, 5, Math.PI, 0);
                     ctx.lineTo(this.x, this.y+10+this.floatY); ctx.closePath(); ctx.fill(); ctx.stroke();
+                } else if (this.type === 'coin') {
+                    ctx.fillStyle = "#ffd700"; ctx.strokeStyle = "#da8"; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.arc(this.x, this.y+this.floatY, 6, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = "#b80"; ctx.fillRect(this.x-1, this.y-3+this.floatY, 2, 6); // Cifrão minimalista
                 }
             }
         }
@@ -259,12 +367,12 @@
 
         class Player {
             constructor(c) {
-                this.x = canvas.width/2; this.y = canvas.height/2; 
                 this.hp = c.hp; this.max = c.hp; this.speed = c.speed; this.dmg = c.dmg; 
                 this.fireRate = c.fireRate; this.range = c.range; this.color = c.color; 
                 this.wep = c.wep; this.fly = c.fly; this.cd = 0; this.inv = 0; 
-                this.multiShot = 1; this.homing = false; this.tearScale = 1.0; 
-                this.orbitals = []; this.vx = 0; this.vy = 0;
+                this.multiShot = 1; this.homing = false; this.piercing = false; this.spectral = false;
+                this.tearScale = 1.0; this.orbitals = []; this.vx = 0; this.vy = 0;
+                this.coins = 0; this.inventory = []; this.sizeScale = 1.0;
             }
             update() {
                 if(this.inv > 0) this.inv--;
@@ -273,14 +381,20 @@
                 this.vx = moveIn.x * this.speed; this.vy = moveIn.y * this.speed;
                 let nx = this.x + this.vx; let ny = this.y + this.vy;
                 
+                // Transição de Sala pelas portas
+                if (nx < 40 && game.currentRoom.doors.includes('left') && Math.abs(ny - canvas.height/2) < 40) { transitionRoom('left'); return; }
+                if (nx > canvas.width - 40 && game.currentRoom.doors.includes('right') && Math.abs(ny - canvas.height/2) < 40) { transitionRoom('right'); return; }
+                if (ny < 40 && game.currentRoom.doors.includes('up') && Math.abs(nx - canvas.width/2) < 40) { transitionRoom('up'); return; }
+                if (ny > canvas.height - 40 && game.currentRoom.doors.includes('down') && Math.abs(nx - canvas.width/2) < 40) { transitionRoom('down'); return; }
+
                 if(!isObstacle(nx, this.y, this.fly)) this.x = nx;
                 if(!isObstacle(this.x, ny, this.fly)) this.y = ny;
 
-                this.x = Math.max(80, Math.min(canvas.width - 80, this.x));
-                this.y = Math.max(80, Math.min(canvas.height - 80, this.y));
+                this.x = Math.max(40, Math.min(canvas.width - 40, this.x));
+                this.y = Math.max(40, Math.min(canvas.height - 40, this.y));
 
                 let gx = Math.floor(this.x/TILE), gy = Math.floor(this.y/TILE);
-                if(currentMap[gy] && currentMap[gy][gx] === 3 && !this.fly) this.takeDmg(1);
+                if(game.currentRoom.map[gy] && game.currentRoom.map[gy][gx] === 3 && !this.fly) this.takeDmg(1);
 
                 this.orbitals.forEach(o => o.update());
 
@@ -290,9 +404,10 @@
                 }
             }
             fire() {
-                if(this.wep === 'laser') return; 
                 const a = Math.atan2(shootIn.y, shootIn.x);
                 const px = this.vx * 0.4, py = this.vy * 0.4;
+
+                if(this.wep === 'laser' || this.wep === 'knife') return; // Desenhados no frame
                 
                 let angles = [];
                 if (this.multiShot === 1) angles = [a];
@@ -300,11 +415,12 @@
                 else if (this.multiShot === 3) angles = [a - 0.2, a, a + 0.2];
                 else if (this.multiShot === 4) angles = [a - 0.3, a - 0.1, a + 0.1, a + 0.3];
                 
-                angles.forEach(ang => projectiles.push(new Projectile(this.x, this.y-10, ang, this.dmg, px, py, false, this.homing, this.tearScale, this.range)));
+                angles.forEach(ang => projectiles.push(new Projectile(this.x, this.y-10, ang, this.dmg, px, py, false, this.homing, this.tearScale, this.range, this.piercing, this.spectral)));
             }
             takeDmg(n) {
                 if(this.inv > 0) return;
                 this.hp -= n; this.inv = 60;
+                playSoundHit();
                 for(let i=0; i<10; i++) particles.push(new Particle(this.x, this.y, "#f00"));
                 if(this.hp <= 0) { game.active = false; setTimeout(() => { alert("GAME OVER! Andares: " + game.floor); location.reload(); }, 100); }
             }
@@ -312,37 +428,91 @@
                 if (this.inv > 0 && Math.floor(Date.now() / 100) % 2 === 0) return; 
 
                 ctx.save();
-                ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.beginPath(); ctx.ellipse(this.x, this.y+15, 14, 6, 0, 0, Math.PI*2); ctx.fill();
+                ctx.translate(this.x, this.y);
+                ctx.scale(this.sizeScale, this.sizeScale);
 
-                ctx.fillStyle = this.color; ctx.beginPath(); ctx.ellipse(this.x, this.y+5, 12, 14, 0, 0, Math.PI*2); ctx.fill();
-                ctx.lineWidth = 2; ctx.strokeStyle = "#000"; ctx.stroke();
+                // Halo (Atrás do personagem)
+                if (this.inventory.includes("THE HALO")) {
+                    ctx.strokeStyle = "#ff0"; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(0, -25, 12, 4, 0, 0, Math.PI*2); ctx.stroke();
+                }
 
-                let headX = this.x + (shootIn.x * 3), headY = this.y - 12 + (shootIn.y * 3);
-                ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(headX, headY, 16, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.beginPath(); ctx.ellipse(0, 15, 14, 6, 0, 0, Math.PI*2); ctx.fill(); // Sombra
+
+                ctx.fillStyle = this.color; ctx.beginPath(); ctx.ellipse(0, 5, 12, 14, 0, 0, Math.PI*2); ctx.fill();
+                ctx.lineWidth = 2; ctx.strokeStyle = "#000"; ctx.stroke(); // Corpo
+
+                let hx = (shootIn.x * 3), hy = -12 + (shootIn.y * 3);
+                
+                if(this.spectral) { ctx.strokeStyle = "#888"; ctx.globalAlpha = 0.8; }
+                ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(hx, hy, 16, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.globalAlpha = 1.0; ctx.strokeStyle = "#000";
+
+                // Detalhes do Rosto baseados nos itens
+                if (this.inventory.includes("SAD ONION")) {
+                    ctx.fillStyle = "#5cf"; ctx.fillRect(hx-8, hy+2, 4, 10); ctx.fillRect(hx+4, hy+2, 4, 10);
+                }
+                if (this.inventory.includes("BRIMSTONE")) {
+                    ctx.fillStyle = "#111"; 
+                    ctx.beginPath(); ctx.moveTo(hx-10, hy-12); ctx.lineTo(hx-18, hy-20); ctx.lineTo(hx-5, hy-16); ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(hx+10, hy-12); ctx.lineTo(hx+18, hy-20); ctx.lineTo(hx+5, hy-16); ctx.fill();
+                }
 
                 ctx.fillStyle = "#000";
-                let eyeOffsetX = shootIn.x * 4, eyeOffsetY = shootIn.y * 4;
-                ctx.beginPath(); ctx.arc(headX - 6 + eyeOffsetX, headY - 2 + eyeOffsetY, 3, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.arc(headX + 6 + eyeOffsetX, headY - 2 + eyeOffsetY, 3, 0, Math.PI*2); ctx.fill();
+                let ex = shootIn.x * 4, ey = shootIn.y * 4;
+                
+                if (this.inventory.includes("POLYPHEMUS")) {
+                    ctx.beginPath(); ctx.arc(hx + ex, hy - 2 + ey, 6, 0, Math.PI*2); ctx.fill(); // Um olho gigante
+                } else {
+                    ctx.beginPath(); ctx.arc(hx - 6 + ex, hy - 2 + ey, 3, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(hx + 6 + ex, hy - 2 + ey, 3, 0, Math.PI*2); ctx.fill();
+                }
+
+                // Armas Especiais (Laser / Knife)
+                ctx.restore(); // Restaura escala para desenhar as armas com alcance correto
+                
+                let wHeadX = this.x + hx * this.sizeScale;
+                let wHeadY = this.y + hy * this.sizeScale;
 
                 if(this.wep === 'laser' && Math.hypot(shootIn.x, shootIn.y) > 0.5) {
                     ctx.strokeStyle = "rgba(255, 0, 0, 0.8)"; ctx.lineWidth = 25 * this.tearScale; ctx.lineCap = "round";
-                    ctx.beginPath(); ctx.moveTo(headX, headY); ctx.lineTo(headX + shootIn.x * (this.range * 15), headY + shootIn.y * (this.range * 15)); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(wHeadX, wHeadY); ctx.lineTo(wHeadX + shootIn.x * (this.range * 15), wHeadY + shootIn.y * (this.range * 15)); ctx.stroke();
                     ctx.strokeStyle = this.homing ? "#a5e" : "#fff"; ctx.lineWidth = 10 * this.tearScale; ctx.stroke();
+                    // Hitbox laser inimigo
+                    enemies.forEach(e => {
+                        let dot = (e.x - this.x)*shootIn.x + (e.y - this.y)*shootIn.y;
+                        if(dot > 0 && Math.hypot(e.x - (this.x + shootIn.x*dot), e.y - (this.y + shootIn.y*dot)) < e.size + 15 * this.tearScale) {
+                            e.hp -= this.dmg * 0.15; e.hitTimer = 2;
+                        }
+                    });
+                } else if (this.wep === 'knife') {
+                    // Mom's knife control: distance changes based on hold time
+                    let kDist = 20;
+                    if(Math.hypot(shootIn.x, shootIn.y) > 0.5) kDist = 60; // Simplificado: faca avança se atirando
+                    let kx = wHeadX + shootIn.x * kDist;
+                    let ky = wHeadY + shootIn.y * kDist;
+                    
+                    ctx.save(); ctx.translate(kx, ky); ctx.rotate(Math.atan2(shootIn.y, shootIn.x) + Math.PI/4);
+                    ctx.fillStyle = "#aaa"; ctx.strokeStyle = "#000"; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(20, -20); ctx.lineTo(5, 5); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle = "#632"; ctx.fillRect(-8, -8, 10, 10); ctx.strokeRect(-8, -8, 10, 10);
+                    ctx.restore();
+                    
+                    // Hitbox knife
+                    enemies.forEach(e => { if(Math.hypot(kx-e.x, ky-e.y) < e.size + 10) { e.hp -= this.dmg * 0.2; e.hitTimer = 2; }});
                 }
-                ctx.restore();
 
                 this.orbitals.forEach(o => o.draw(this.x, this.y));
             }
         }
 
         class Projectile {
-            constructor(x, y, a, d, px, py, isEnemy, homing = false, scale = 1.0, range = 45) { 
+            constructor(x, y, a, d, px, py, isEnemy, homing = false, scale = 1.0, range = 45, piercing = false, spectral = false) { 
                 this.x = x; this.y = y; 
                 this.vx = Math.cos(a)* (isEnemy ? 6 : 10) + px; 
                 this.vy = Math.sin(a)* (isEnemy ? 6 : 10) + py; 
                 this.dmg = d; this.life = range; 
                 this.isEnemy = isEnemy; this.homing = homing; this.scale = scale;
+                this.piercing = piercing; this.spectral = spectral;
             }
             update() { 
                 if(this.homing && !this.isEnemy && enemies.length > 0) {
@@ -361,13 +531,15 @@
 
                 this.x += this.vx; this.y += this.vy; this.life--; 
                 if(this.x < 50 || this.x > canvas.width-50 || this.y < 50 || this.y > canvas.height-50) this.life = 0;
-                if(isObstacle(this.x, this.y, false)) this.life = 0;
+                if(!this.spectral && isObstacle(this.x, this.y, false)) this.life = 0;
             }
             draw() { 
-                ctx.fillStyle = this.isEnemy ? "#ff4d4d" : (this.homing ? "#c7f" : "#a8d8ff"); 
-                ctx.strokeStyle = this.isEnemy ? "#a00" : (this.homing ? "#62a" : "#4488cc"); 
+                ctx.fillStyle = this.isEnemy ? "#ff4d4d" : (this.homing ? "#c7f" : (this.spectral ? "#eee" : "#a8d8ff")); 
+                ctx.strokeStyle = this.isEnemy ? "#a00" : (this.homing ? "#62a" : (this.spectral ? "#ccc" : "#4488cc")); 
                 ctx.lineWidth = 2;
+                if(this.spectral && !this.isEnemy) ctx.globalAlpha = 0.6;
                 ctx.beginPath(); ctx.arc(this.x, this.y, 8 * this.scale, 0, Math.PI*2); ctx.fill(); ctx.stroke(); 
+                ctx.globalAlpha = 1.0;
                 
                 ctx.fillStyle = "rgba(255,255,255,0.6)";
                 ctx.beginPath(); ctx.arc(this.x-2, this.y-2, 3 * this.scale, 0, Math.PI*2); ctx.fill();
@@ -384,11 +556,14 @@
                 this.hitTimer = 0; this.vx = 0; this.vy = 0;
                 this.attackCooldown = Math.random() * 60;
 
+                let scaleHP = game.floor * 2;
+                let scaleSpd = game.floor * 0.1;
+
                 switch(type) {
-                    case 'gaper': this.hp = 10; this.size = 18; this.speed = 2.5; this.color = "#563"; this.fly = false; break;
-                    case 'pooter': this.hp = 8; this.size = 14; this.speed = 1.0; this.color = "#222"; this.fly = true; break;
-                    case 'clotty': this.hp = 15; this.size = 22; this.speed = 1.0; this.color = "#a22"; this.fly = false; break;
-                    case 'boss': this.hp = 250; this.size = 35; this.speed = 1.8; this.color = "#822"; this.fly = false; break;
+                    case 'gaper': this.hp = 5 + scaleHP; this.size = 18; this.speed = 1.5 + scaleSpd; this.color = "#563"; this.fly = false; break;
+                    case 'pooter': this.hp = 3 + scaleHP; this.size = 14; this.speed = 1.0 + scaleSpd; this.color = "#222"; this.fly = true; break;
+                    case 'clotty': this.hp = 8 + scaleHP; this.size = 22; this.speed = 0.8 + scaleSpd; this.color = "#a22"; this.fly = false; break;
+                    case 'boss': this.hp = 50 + (game.floor * 30); this.size = 35; this.speed = 1.5 + scaleSpd; this.color = "#822"; this.fly = false; break;
                 }
                 this.maxHp = this.hp;
             }
@@ -457,22 +632,140 @@
             }
         }
 
+        // --- GERAÇÃO DE MAPA E SALAS ---
+        function generateFloorMap() {
+            let numRooms = 5 + Math.floor(game.floor * 1.5);
+            let grid = Array(9).fill(null).map(() => Array(9).fill(null));
+            let roomsList = [];
+            
+            grid[4][4] = { type: 'spawn', cleared: true, x: 4, y: 4, doors: [], map: buildRoomMap('spawn'), item: null, discovered: true };
+            roomsList.push(grid[4][4]);
+            
+            let attempts = 0;
+            while(roomsList.length < numRooms && attempts < 1000) {
+                let r = roomsList[Math.floor(Math.random() * roomsList.length)];
+                let dirs = [[0,-1, 'up'], [0,1, 'down'], [-1,0, 'left'], [1,0, 'right']];
+                let d = dirs[Math.floor(Math.random() * dirs.length)];
+                let nx = r.x + d[0], ny = r.y + d[1];
+                
+                if(nx >= 0 && nx < 9 && ny >= 0 && ny < 9 && !grid[ny][nx]) {
+                    grid[ny][nx] = { type: 'normal', cleared: false, x: nx, y: ny, doors: [], map: buildRoomMap('normal'), item: null, discovered: false };
+                    roomsList.push(grid[ny][nx]);
+                }
+                attempts++;
+            }
+            
+            roomsList.sort((a,b) => Math.hypot(b.x-4, b.y-4) - Math.hypot(a.x-4, a.y-4));
+            roomsList[0].type = 'boss';
+            
+            let itemRoom = roomsList.find(r => r.type === 'normal' && r !== roomsList[0]);
+            if(itemRoom) {
+                itemRoom.type = 'item'; 
+                if(itemPool.length > 0) {
+                    let idx = Math.floor(Math.random()*itemPool.length);
+                    itemRoom.item = itemPool.splice(idx, 1)[0];
+                }
+                itemRoom.map = buildRoomMap('empty');
+            }
+
+            let shopRoom = roomsList.find(r => r.type === 'normal' && r !== roomsList[0] && r.type !== 'item');
+            if(shopRoom) {
+                shopRoom.type = 'shop';
+                shopRoom.cleared = true;
+                if(itemPool.length > 0) {
+                    let idx = Math.floor(Math.random()*itemPool.length);
+                    shopRoom.item = itemPool.splice(idx, 1)[0];
+                }
+                shopRoom.map = buildRoomMap('empty');
+            }
+
+            if(itemPool.length > 0) {
+                let idx = Math.floor(Math.random()*itemPool.length);
+                roomsList[0].item = itemPool.splice(idx, 1)[0];
+            }
+            roomsList[0].map = buildRoomMap('empty');
+
+            roomsList.forEach(r => {
+                if(grid[r.y-1] && grid[r.y-1][r.x]) r.doors.push('up');
+                if(grid[r.y+1] && grid[r.y+1][r.x]) r.doors.push('down');
+                if(grid[r.y][r.x-1]) r.doors.push('left');
+                if(grid[r.y][r.x+1]) r.doors.push('right');
+            });
+            
+            game.mapGrid = grid; game.rooms = roomsList;
+            loadRoom(4, 4);
+        }
+
+        function buildRoomMap(type) {
+            let m = Array.from({length: GRID_H}, () => Array(GRID_W).fill(0));
+            if (type === 'empty' || type === 'spawn') return m;
+            
+            for(let y=1; y<GRID_H-1; y++) {
+                for(let x=1; x<GRID_W-1; x++) {
+                    // Garantir caminhos livres (Cruz de portas)
+                    if ((x >= 7 && x <= 10) || (y >= 4 && y <= 7)) continue;
+                    
+                    let r = Math.random();
+                    if(r < 0.10) m[y][x] = 1; // Rocha
+                    else if(r < 0.12) m[y][x] = 3; // Espinho
+                }
+            }
+            return m;
+        }
+
+        function loadRoom(gx, gy) {
+            game.currentRoom = game.mapGrid[gy][gx];
+            game.currentRoom.discovered = true;
+            enemies = []; projectiles = []; enemyProjectiles = []; particles = []; pickups = []; upgrade = null;
+            
+            if (!game.currentRoom.cleared) {
+                if (game.currentRoom.type === 'normal') {
+                    let numE = 2 + Math.floor(game.floor);
+                    for(let i=0; i<numE; i++) {
+                        let r = Math.random(), type = 'gaper';
+                        if (game.floor > 1 && r > 0.4) type = 'pooter';
+                        if (game.floor > 2 && r > 0.7) type = 'clotty';
+                        enemies.push(new Enemy(Math.random()*(canvas.width-150)+75, Math.random()*(canvas.height-150)+75, type));
+                    }
+                } else if (game.currentRoom.type === 'boss') {
+                    enemies.push(new Enemy(canvas.width/2, canvas.height/2, 'boss'));
+                }
+            } else {
+                checkRoomClearRewards();
+            }
+        }
+
+        function transitionRoom(dir) {
+            let nx = game.currentRoom.x, ny = game.currentRoom.y;
+            if (dir === 'up') { ny--; player.y = canvas.height - 60; }
+            if (dir === 'down') { ny++; player.y = 60; }
+            if (dir === 'left') { nx--; player.x = canvas.width - 60; }
+            if (dir === 'right') { nx++; player.x = 60; }
+            loadRoom(nx, ny);
+        }
+
         function isObstacle(x, y, isFlying) {
             let gx = Math.floor(x/TILE), gy = Math.floor(y/TILE);
-            if(gx <= 0 || gx >= GRID_W-1 || gy <= 0 || gy >= GRID_H-1) return true;
-            if (currentMap[gy] && currentMap[gy][gx] === 1) return true; // Rocha
+            if(gx <= 0 || gx >= GRID_W-1 || gy <= 0 || gy >= GRID_H-1) {
+                let inDoorZone = false;
+                if (gx <= 0 && game.currentRoom.doors.includes('left') && Math.abs(y - canvas.height/2) < 40) inDoorZone = true;
+                if (gx >= GRID_W-1 && game.currentRoom.doors.includes('right') && Math.abs(y - canvas.height/2) < 40) inDoorZone = true;
+                if (gy <= 0 && game.currentRoom.doors.includes('up') && Math.abs(x - canvas.width/2) < 40) inDoorZone = true;
+                if (gy >= GRID_H-1 && game.currentRoom.doors.includes('down') && Math.abs(x - canvas.width/2) < 40) inDoorZone = true;
+                return !inDoorZone;
+            }
+            if (game.currentRoom.map[gy] && game.currentRoom.map[gy][gx] === 1) return !isFlying;
             return false;
         }
 
-        function generateMap() {
-            currentMap = Array.from({length: GRID_H}, () => Array(GRID_W).fill(0));
-            for(let y=1; y<GRID_H-1; y++) {
-                for(let x=1; x<GRID_W-1; x++) {
-                    if (Math.hypot(x*TILE - canvas.width/2, y*TILE - canvas.height/2) < 150) continue;
-                    let r = Math.random();
-                    if(r < 0.12) currentMap[y][x] = 1; // Rocha
-                    else if(r < 0.15) currentMap[y][x] = 3; // Espinho
-                }
+        function checkRoomClearRewards() {
+            if (game.currentRoom.type === 'item' && game.currentRoom.item) {
+                upgrade = { x: canvas.width/2, y: canvas.height/2, item: game.currentRoom.item, floatY: 0, price: 0 };
+            } else if (game.currentRoom.type === 'shop' && game.currentRoom.item) {
+                upgrade = { x: canvas.width/2, y: canvas.height/2, item: game.currentRoom.item, floatY: 0, price: 15 };
+            } else if (game.currentRoom.type === 'boss') {
+                if (game.currentRoom.item) upgrade = { x: canvas.width/2, y: canvas.height/2 - 50, item: game.currentRoom.item, floatY: 0, price: 0 };
+                game.currentRoom.trapdoor = true;
             }
         }
 
@@ -490,14 +783,43 @@
             ctx.fillText("FLOOR: " + game.floor, 20, 55);
             ctx.fillText("DMG: " + player.dmg.toFixed(2), 20, 75);
             ctx.fillText("SPD: " + (player.speed / 4.0).toFixed(2), 20, 95);
+            
+            ctx.fillStyle = "#ffd700";
+            ctx.fillText("COINS: " + player.coins, 20, 115);
+
+            ctx.save();
+            ctx.translate(canvas.width - 120, 20);
+            ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(0, 0, 100, 100);
+            
+            game.rooms.forEach(r => {
+                if(!r.discovered) return;
+                let mx = (r.x - 4) * 12 + 45, my = (r.y - 4) * 12 + 45;
+                ctx.fillStyle = (r === game.currentRoom) ? "#fff" : (r.cleared ? "#888" : "#555");
+                if (r.type === 'boss') ctx.fillStyle = (r === game.currentRoom) ? "#fff" : "#a22";
+                if (r.type === 'item') ctx.fillStyle = (r === game.currentRoom) ? "#fff" : "#dd2";
+                if (r.type === 'shop') ctx.fillStyle = (r === game.currentRoom) ? "#fff" : "#2d2";
+                
+                ctx.fillRect(mx, my, 10, 10);
+                
+                ctx.fillStyle = "#222";
+                if(r.doors.includes('up')) ctx.fillRect(mx+4, my-2, 2, 2);
+                if(r.doors.includes('down')) ctx.fillRect(mx+4, my+10, 2, 2);
+                if(r.doors.includes('left')) ctx.fillRect(mx-2, my+4, 2, 2);
+                if(r.doors.includes('right')) ctx.fillRect(mx+10, my+4, 2, 2);
+            });
+            ctx.restore();
         }
 
         function startGame() {
+            initAudio(); // Inicia trilha sonora
+            itemPool = [...ITEMS_DB]; // Preenche o pool
             document.getElementById('menu').classList.add('hidden');
             ['ui-layer', 'gameCanvas', 'ui-controls'].forEach(id => document.getElementById(id).classList.remove('hidden'));
 
             const c = CHARACTERS[currentCharIndex];
             player = new Player(c);
+            player.x = canvas.width/2; player.y = canvas.height/2;
+            
             game.active = true; game.floor = 1;
             
             setupJoy('joy-move', 'knob-move', moveIn);
@@ -508,23 +830,7 @@
         function newFloor() {
             let pKey = Object.keys(PALETTES).reverse().find(k => game.floor >= k) || 1;
             game.palette = PALETTES[pKey];
-            game.trapdoor = null; upgrade = null; game.state = 'playing';
-            
-            player.x = canvas.width/2; player.y = canvas.height/2;
-            generateMap(); 
-            enemies = []; projectiles = []; enemyProjectiles = []; particles = []; pickups = [];
-            
-            let numEnemies = 2 + Math.floor(game.floor * 1.5);
-            for(let i=0; i<numEnemies; i++) {
-                let ex = Math.random()*(canvas.width-150)+75, ey = Math.random()*(canvas.height-150)+75;
-                if(Math.hypot(ex-player.x, ey-player.y) > 200) {
-                    let r = Math.random(), type = 'gaper';
-                    if (game.floor > 1 && r > 0.5) type = 'pooter';
-                    if (game.floor > 2 && r > 0.8) type = 'clotty';
-                    enemies.push(new Enemy(ex, ey, type));
-                } else i--; 
-            }
-            if (game.floor % 3 === 0) enemies.push(new Enemy(150, 150, 'boss'));
+            generateFloorMap();
         }
 
         function loop() {
@@ -534,25 +840,32 @@
             ctx.fillStyle = game.palette.floor; ctx.fillRect(TILE, TILE, canvas.width - TILE*2, canvas.height - TILE*2);
             ctx.fillStyle = "rgba(0,0,0,0.4)"; ctx.fillRect(TILE, TILE, canvas.width - TILE*2, 10);
             
+            ctx.fillStyle = enemies.length > 0 ? "#522" : "#222";
+            if (game.currentRoom.doors.includes('up')) ctx.fillRect(canvas.width/2 - 30, 0, 60, TILE);
+            if (game.currentRoom.doors.includes('down')) ctx.fillRect(canvas.width/2 - 30, canvas.height - TILE, 60, TILE);
+            if (game.currentRoom.doors.includes('left')) ctx.fillRect(0, canvas.height/2 - 30, TILE, 60);
+            if (game.currentRoom.doors.includes('right')) ctx.fillRect(canvas.width - TILE, canvas.height/2 - 30, TILE, 60);
+
             for(let y=1; y<GRID_H-1; y++) for(let x=1; x<GRID_W-1; x++) {
                 let xp = x*TILE, yp = y*TILE;
-                if(currentMap[y][x] === 1) { // Rocha
+                if(game.currentRoom.map[y][x] === 1) { 
                     ctx.fillStyle = game.palette.rock; ctx.fillRect(xp + 2, yp + 2, TILE-4, TILE-4);
                     ctx.fillStyle = "rgba(0,0,0,0.3)"; ctx.fillRect(xp + 2, yp + 40, TILE-4, 8);
-                } else if (currentMap[y][x] === 3) { // Espinhos
+                } else if (game.currentRoom.map[y][x] === 3) { 
                     ctx.fillStyle = "#333"; ctx.fillRect(xp+5, yp+5, TILE-10, TILE-10);
                     ctx.fillStyle = game.palette.spike;
                     ctx.beginPath(); ctx.moveTo(xp+10,yp+40); ctx.lineTo(xp+25,yp+10); ctx.lineTo(xp+40,yp+40); ctx.fill();
                 }
             }
 
-            if(game.trapdoor) {
-                ctx.fillStyle = "#111"; ctx.fillRect(canvas.width/2 - 25, canvas.height/2 - 25, 50, 50);
-                ctx.strokeStyle = "#444"; ctx.lineWidth = 4; ctx.strokeRect(canvas.width/2 - 25, canvas.height/2 - 25, 50, 50);
-                ctx.fillStyle = "#333"; ctx.fillRect(canvas.width/2 - 20, canvas.height/2 - 15, 40, 5); ctx.fillRect(canvas.width/2 - 20, canvas.height/2 - 5, 40, 5);
+            if(game.currentRoom.trapdoor) {
+                let tx = canvas.width/2, ty = canvas.height/2 + 30;
+                ctx.fillStyle = "#111"; ctx.fillRect(tx - 25, ty - 25, 50, 50);
+                ctx.strokeStyle = "#444"; ctx.lineWidth = 4; ctx.strokeRect(tx - 25, ty - 25, 50, 50);
+                ctx.fillStyle = "#333"; ctx.fillRect(tx - 20, ty - 15, 40, 5); ctx.fillRect(tx - 20, ty - 5, 40, 5);
                 
-                if (Math.hypot(player.x - canvas.width/2, player.y - canvas.height/2) < 20) {
-                    game.floor++; newFloor(); requestAnimationFrame(loop); return;
+                if (Math.hypot(player.x - tx, player.y - ty) < 20) {
+                    game.floor++; newFloor(); player.x = canvas.width/2; player.y = canvas.height/2; requestAnimationFrame(loop); return;
                 }
             }
 
@@ -560,38 +873,38 @@
                 p.draw();
                 if(Math.hypot(player.x - p.x, player.y - p.y) < 20) {
                     if (p.type === 'heart' && player.hp < player.max) { player.hp++; pickups.splice(i, 1); }
+                    else if (p.type === 'coin') { player.coins++; pickups.splice(i, 1); }
                 }
             });
-
-            if(enemies.length === 0 && !upgrade && !game.trapdoor) {
-                upgrade = { x: canvas.width/2, y: canvas.height/2, item: ITEMS[Math.floor(Math.random()*ITEMS.length)], floatY: 0 };
-            }
 
             if(upgrade) {
                 upgrade.floatY = Math.sin(Date.now() / 200) * 5;
                 ctx.fillStyle = "#555"; ctx.fillRect(upgrade.x - 15, upgrade.y + 10, 30, 20);
                 ctx.fillStyle = "#777"; ctx.fillRect(upgrade.x - 20, upgrade.y + 5, 40, 5);
                 
-                ctx.fillStyle = upgrade.item.color; ctx.strokeStyle = "#000"; ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.arc(upgrade.x, upgrade.y - 15 + upgrade.floatY, 12, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                drawItemSprite(ctx, upgrade.item.n, upgrade.x, upgrade.y - 15 + upgrade.floatY);
                 
+                if(upgrade.price > 0) {
+                    ctx.fillStyle = "#fff"; ctx.font = "bold 14px monospace";
+                    ctx.fillText(upgrade.price + "¢", upgrade.x - 10, upgrade.y + 40);
+                }
+
                 if(Math.hypot(player.x-upgrade.x, player.y-upgrade.y) < 30) {
-                    upgrade.item.f(player);
-                    document.getElementById('it-name').innerText = upgrade.item.n;
-                    document.getElementById('it-stat').innerText = upgrade.item.s;
-                    const b = document.getElementById('item-banner');
-                    b.classList.add('show'); setTimeout(() => b.classList.remove('show'), 2000);
-                    upgrade = null; game.trapdoor = true;
+                    if (player.coins >= upgrade.price) {
+                        player.coins -= upgrade.price;
+                        player.inventory.push(upgrade.item.n);
+                        upgrade.item.f(player);
+                        document.getElementById('it-name').innerText = upgrade.item.n;
+                        document.getElementById('it-stat').innerText = upgrade.item.s;
+                        const b = document.getElementById('item-banner');
+                        b.classList.add('show'); setTimeout(() => b.classList.remove('show'), 2000);
+                        game.currentRoom.item = null;
+                        upgrade = null; 
+                    }
                 }
             }
 
             player.update(); player.draw();
-
-            player.orbitals.forEach(o => {
-                let ox = player.x + Math.cos(o.angle)*o.dist, oy = player.y + Math.sin(o.angle)*o.dist;
-                enemies.forEach(e => { if(Math.hypot(ox-e.x, oy-e.y) < e.size + 15) { e.hp -= 0.1; e.hitTimer = 2; } });
-                enemyProjectiles.forEach(p => { if(Math.hypot(ox-p.x, oy-p.y) < 15) p.life = 0; });
-            });
 
             projectiles.forEach((p, i) => { p.update(); p.draw(); if(p.life <= 0) { p.destroy(); projectiles.splice(i, 1); } });
 
@@ -602,33 +915,33 @@
             });
 
             enemies.forEach((e, i) => {
-                e.update(); e.draw();
+                let distToDoor = Math.min(player.x, canvas.width - player.x, player.y, canvas.height - player.y);
+                if (distToDoor > 60) e.update(); 
+                e.draw();
+                
                 projectiles.forEach((p, pi) => {
                     if(Math.hypot(p.x-e.x, p.y-e.y) < e.size + 8 * p.scale) {
                         e.hp -= p.dmg; e.hitTimer = 5;
                         for(let k=0; k<3; k++) particles.push(new Particle(p.x, p.y, "#f00"));
-                        p.destroy(); projectiles.splice(pi, 1);
+                        if(!p.piercing) { p.destroy(); projectiles.splice(pi, 1); }
                     }
                 });
-
-                if(player.wep === 'laser' && Math.hypot(shootIn.x, shootIn.y) > 0.5) {
-                    let dx = shootIn.x, dy = shootIn.y;
-                    let ex = e.x - player.x, ey = e.y - player.y;
-                    let dot = ex * dx + ey * dy;
-                    if (dot > 0) {
-                        let projX = dx * dot, projY = dy * dot;
-                        if (Math.hypot(ex - projX, ey - projY) < e.size + 15 * player.tearScale) { e.hp -= player.dmg * 0.15; e.hitTimer = 2; }
-                    }
-                }
 
                 if(Math.hypot(e.x-player.x, e.y-player.y) < e.size + 10) player.takeDmg(1);
                 
                 if(e.hp <= 0) {
                     for(let k=0; k<15; k++) particles.push(new Particle(e.x, e.y, "#900"));
-                    if(Math.random() < 0.25) pickups.push(new Pickup(e.x, e.y, 'heart')); 
+                    let rand = Math.random();
+                    if(rand < 0.15) pickups.push(new Pickup(e.x, e.y, 'heart')); 
+                    else if (rand < 0.40) pickups.push(new Pickup(e.x, e.y, 'coin'));
                     enemies.splice(i, 1);
                 }
             });
+
+            if (enemies.length === 0 && !game.currentRoom.cleared) {
+                game.currentRoom.cleared = true;
+                checkRoomClearRewards();
+            }
 
             particles.forEach((p, i) => { p.update(); p.draw(); if(p.life <= 0) particles.splice(i, 1); });
 
