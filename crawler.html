@@ -3,202 +3,314 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vampire Crawlers: Darkest Descent - Definitive</title>
+    <title>Vampire Crawlers: Darkest Descent - Ultimate Tabletop Edition</title>
     <style>
         :root { 
-            --mana: #4a90e2; --gold: #d4af37; --hp: #8b0000; --soul: #4b0082; 
-            --bg: #050507; --panel: #0a0a0e; --border: #1a1a24; --text: #d0d0d0;
+            --mana: #4a90e2; --gold: #d4af37; --hp: #8b0000; --soul: #4b0082; --poison: #2e8b57; --luck: #20b2aa;
+            --bg: #030305; --panel: #08080a; --border: #1a1a24; --text: #d0d0d0;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Garamond', serif; }
+        body { margin: 0; background: var(--bg); color: var(--text); overflow: hidden; height: 100dvh; display: flex; flex-direction: column; user-select: none; }
         
-        body { 
-            margin: 0; background: var(--bg); color: var(--text); 
-            overflow: hidden; height: 100dvh; display: flex; flex-direction: column; user-select: none;
-        }
+        #crt-filter { position: fixed; inset: 0; pointer-events: none; z-index: 9999; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%); background-size: 100% 4px; opacity: 0.15; mix-blend-mode: overlay; }
 
-        #crt-filter {
-            position: fixed; inset: 0; pointer-events: none; z-index: 9999;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
-            background-size: 100% 4px; opacity: 0.15; pointer-events: none;
-        }
-
-        /* --- MENUS E MODAIS --- */
-        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 6000; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; text-align: center; }
-        .setup-group { width: 100%; max-width: 600px; margin-bottom: 15px; border: 1px solid #222; padding: 10px; border-radius: 8px; background: rgba(10,10,10,0.6); }
-        input[type="text"] { width: 100%; padding: 12px; background: #0a0a0a; border: 1px solid var(--border); color: white; text-align: center; font-size: 18px; border-radius: 4px; margin-bottom: 10px; }
-        
-        .sel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; }
-        .sel-card { background: #121216; border: 1px solid var(--border); padding: 10px; cursor: pointer; font-size: 11px; transition: 0.2s; border-radius: 4px; display: flex; flex-direction: column; justify-content: center; }
+        /* === MENUS E INTERFACES BASE === */
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 6000; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; text-align: center; }
+        .setup-group { width: 100%; max-width: 600px; margin-bottom: 12px; border: 1px solid #222; padding: 10px; border-radius: 8px; background: rgba(10,10,10,0.8); box-shadow: inset 0 0 15px #000; }
+        input[type="text"] { width: 100%; padding: 10px; background: #050505; border: 1px solid var(--border); color: white; text-align: center; font-size: 16px; border-radius: 4px; margin-bottom: 8px; letter-spacing: 2px; }
+        .sel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 6px; }
+        .sel-card { background: #121216; border: 1px solid var(--border); padding: 8px; cursor: pointer; font-size: 11px; transition: 0.2s; border-radius: 4px; display: flex; flex-direction: column; justify-content: center; position: relative; }
         .sel-card.active { border-color: var(--gold); background: #2a0a0a; border-width: 2px; box-shadow: 0 0 10px var(--gold); transform: scale(1.02); }
-        .desc-pop { font-size: 10px; color: #888; display: block; margin-top: 5px; }
+        .desc-pop { font-size: 10px; color: #888; display: block; margin-top: 4px; }
+        #lore-box { font-size: 13px; color: #bbb; max-width: 600px; text-align: center; margin-bottom: 15px; font-style: italic; background: rgba(20,20,20,0.9); padding: 12px; border-radius: 8px; border-left: 4px solid var(--gold); }
+        #backstage-stats { width: 100%; max-width: 600px; background: #0a0a0a; padding: 10px; border: 1px solid #333; border-radius: 5px; margin-bottom: 10px; display: flex; justify-content: space-around; font-size: 12px; color: var(--gold); font-weight: bold; flex-wrap: wrap; gap:5px;}
         
-        #lore-box { font-size: 14px; color: #bbb; max-width: 600px; text-align: center; margin-bottom: 15px; font-style: italic; background: rgba(20,20,20,0.9); padding: 15px; border-radius: 8px; border-left: 4px solid var(--gold); }
-        #backstage-stats { width: 100%; max-width: 600px; background: #111; padding: 10px; border: 1px solid #333; border-radius: 5px; margin-bottom: 15px; display: flex; justify-content: space-around; font-size: 13px; color: var(--gold); font-weight: bold; }
+        .btn-action { background: var(--hp); color: white; border: 1px solid #ff4444; padding: 12px 30px; font-weight: bold; cursor: pointer; border-radius: 4px; font-size: 14px; box-shadow: 0 4px 15px rgba(139,0,0,0.4); transition: 0.3s; text-transform: uppercase; letter-spacing: 2px; }
+        .btn-action:hover { filter: brightness(1.3); transform: translateY(-2px); }
+        .btn-action:disabled { background: #111; color: #444; border-color: #222; cursor: not-allowed; box-shadow: none; transform: none; }
 
-        .btn-action { background: var(--hp); color: white; border: none; padding: 15px 40px; font-weight: bold; cursor: pointer; border-radius: 6px; font-size: 16px; box-shadow: 0 4px 10px #000; transition: 0.3s; text-transform: uppercase; margin-top: 10px; }
-        .btn-action:hover { filter: brightness(1.2); }
-        .btn-action:disabled { background: #333; color: #666; cursor: not-allowed; }
-
-        /* --- HUD PRINCIPAL --- */
-        #diablo-hud { position: absolute; bottom: 65px; width: 100%; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px; pointer-events: none; z-index: 4000; }
+        /* === HUD PRINCIPAL === */
+        #diablo-hud { position: absolute; bottom: 70px; width: 100%; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px; pointer-events: none; z-index: 4000; }
         .globe-wrapper { display: flex; flex-direction: column; align-items: center; }
-        .globe { width: 90px; height: 90px; border-radius: 50%; border: 3px solid #222; background: #050505; overflow: hidden; position: relative; box-shadow: 0 0 20px #000; pointer-events: auto; }
-        .globe-fill { position: absolute; bottom: 0; width: 100%; transition: height 0.8s ease; }
-        #hp-fill { background: linear-gradient(0deg, #300 0%, #800 50%, #d00 100%); box-shadow: inset 0 0 15px rgba(255,0,0,0.5); }
-        #mana-fill { background: linear-gradient(0deg, #002 0%, #006 50%, #08d 100%); box-shadow: inset 0 0 15px rgba(0,255,255,0.5); }
-        .globe-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; text-shadow: 1px 1px 3px black; font-size: 13px; z-index: 10; }
-
-        /* --- JOGO --- */
-        #game-container { display: flex; flex-direction: row; flex: 1; overflow: hidden; position: relative; transition: filter 1s ease; }
+        .globe { width: 80px; height: 80px; border-radius: 50%; border: 3px solid #1a1a1a; background: #000; overflow: hidden; position: relative; box-shadow: 0 0 20px #000; pointer-events: auto; }
+        .globe-fill { position: absolute; bottom: 0; width: 100%; transition: height 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        #hp-fill { background: linear-gradient(0deg, #200 0%, #a00 50%, #f00 100%); box-shadow: inset 0 0 20px rgba(255,0,0,0.6); }
+        #mana-fill { background: linear-gradient(0deg, #002 0%, #008 50%, #0cf 100%); box-shadow: inset 0 0 20px rgba(0,255,255,0.6); }
+        .globe-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; color: white; text-shadow: 2px 2px 4px black; font-size: 12px; z-index: 10; }
         
-        #side-panel { background: var(--panel); border-right: 1px solid var(--border); padding: 15px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; z-index: 200; width: 160px; }
+        .action-btns-center { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); pointer-events: auto; display: flex; gap: 15px; z-index: 4500; }
+        .hud-btn { width: 60px; height: 60px; border-radius: 50%; background: #111; border: 3px solid; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; position: relative; }
+        #spell-btn { border-color: var(--soul); box-shadow: 0 0 15px rgba(75,0,130,0.6); }
+        #potion-btn { border-color: var(--hp); box-shadow: 0 0 15px rgba(139,0,0,0.6); }
+        .hud-btn:hover:not(:disabled) { filter: brightness(1.5); transform: scale(1.1); }
+        .hud-btn:disabled { border-color: #333; opacity: 0.5; cursor: not-allowed; box-shadow: none; filter: grayscale(1); }
+        .btn-tag { font-size: 10px; font-weight: bold; position: absolute; bottom: -18px; text-shadow: 1px 1px 2px #000; color: white; white-space: nowrap;}
+
+        /* === JOGO E LAYOUT === */
+        #game-container { display: flex; flex-direction: row; flex: 1; overflow: hidden; position: relative; }
+        #side-panel { background: var(--panel); border-right: 2px solid var(--border); padding: 15px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; z-index: 200; width: 170px; overflow-y: auto; box-shadow: 10px 0 20px rgba(0,0,0,0.5); }
         .stat-group { border-bottom: 1px solid var(--border); padding-bottom: 4px; }
-        .stat-group b { font-size: 10px; color: var(--gold); text-transform: uppercase; }
+        .stat-group b { font-size: 10px; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; }
         .stat-val { font-size: 14px; font-weight: bold; display: block; }
-        
         #relics-container { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
-        .relic-icon { font-size: 14px; background: #1a1a1a; padding: 3px; border-radius: 4px; border: 1px solid var(--gold); }
+        .relic-icon { font-size: 16px; background: #111; padding: 4px; border-radius: 4px; border: 1px solid var(--gold); }
 
-        #main-view { position: relative; display: flex; flex-direction: column; background: #050507; flex: 1; overflow: hidden; transition: filter 1s, box-shadow 1s; }
+        #main-view { position: relative; display: flex; flex-direction: column; background: #050507; flex: 1; overflow: hidden; }
+        #time-tint { position: absolute; inset: 0; pointer-events: none; z-index: 2; mix-blend-mode: multiply; transition: background 3s ease; }
+        #weather-tint { position: absolute; inset: 0; pointer-events: none; z-index: 3; transition: opacity 2s ease; opacity: 0; background: radial-gradient(circle, rgba(255,0,0,0.2), rgba(100,0,0,0.6)); mix-blend-mode: color-burn; }
+        #stage { height: 50vh; position: relative; padding: 20px; border-bottom: 2px solid var(--border); transition: background 2s; overflow: hidden; display: flex; align-items: flex-end; justify-content: center; }
+        .stage-fog { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,1) 5%, transparent 60%); pointer-events: none; z-index: 5; }
         
-        /* Efeitos Climáticos / Visuais */
-        .weather-blood { filter: sepia(0.6) hue-rotate(-20deg) saturate(2) brightness(0.8); box-shadow: inset 0 0 100px rgba(150, 0, 0, 0.5); }
-        .weather-blood::after { content: ''; position: absolute; inset: 0; background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><circle cx="2" cy="2" r="1" fill="red" opacity="0.3"/></svg>'); animation: rain 0.5s linear infinite; pointer-events: none; z-index: 100; }
-        @keyframes rain { from { background-position: 0 0; } to { background-position: -20px 100vh; } }
+        /* Sistema de Partículas Estilo Balatro */
+        #particles-container { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; opacity: 0.6; filter: blur(2px); }
+        .particle { position: absolute; background: rgba(255, 255, 255, 0.08); animation: floatUp linear infinite; }
+        @keyframes floatUp { 0% { transform: translateY(110vh) rotate(0deg) scale(1); opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { transform: translateY(-10vh) rotate(360deg) scale(0.5); opacity: 0; } }
+
+        /* UI D20 Persistente */
+        #ui-d20 { position: absolute; top: 15px; left: 15px; width: 50px; height: 50px; background: #111; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; color: var(--gold); clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); z-index: 100; box-shadow: 0 0 15px rgba(212,175,55,0.3); }
+
+        #narrative-log { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); width: 70%; max-width: 400px; background: rgba(0,0,0,0.85); border: 1px solid var(--border); padding: 8px; font-size: 12px; text-align: center; font-style: italic; z-index: 150; border-radius: 4px; border-top: 2px solid var(--gold); text-shadow: 1px 1px 2px #000; letter-spacing: 1px; }
+
+        /* === QTE BAR === */
+        #qte-overlay { position: absolute; top: 35%; left: 50%; transform: translateX(-50%); width: 250px; height: 20px; background: #000; border: 2px solid #444; border-radius: 10px; display: none; z-index: 5000; overflow: hidden; box-shadow: 0 0 20px #000; }
+        #qte-target { position: absolute; top: 0; height: 100%; background: rgba(0, 255, 100, 0.6); box-shadow: inset 0 0 10px rgba(0,255,0,0.8); }
+        #qte-cursor { position: absolute; top: 0; height: 100%; width: 6px; background: #fff; box-shadow: 0 0 10px #fff, 0 0 20px var(--mana); border-radius: 3px; }
+        #qte-label { position: absolute; top: -25px; width: 100%; text-align: center; color: white; font-size: 12px; font-weight: bold; letter-spacing: 2px; text-shadow: 1px 1px 2px #000;}
+
+        /* === COMBATE GRID === */
+        #battle-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 600px; height: 100%; z-index: 10; position: relative; padding-bottom: 20px;}
+        .grid-cell { display: flex; align-items: flex-end; justify-content: center; position: relative; }
         
-        #stage { height: 45vh; position: relative; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 30px; border-bottom: 2px solid var(--border); transition: background 2s; overflow: hidden; }
-        .parallax { position: absolute; inset: 0; pointer-events: none; white-space: nowrap; font-size: 70px; opacity: 0.1; animation: scroll 60s linear infinite; display: flex; align-items: center; justify-content: center;}
-        @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .enemy { text-align: center; position: relative; transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); cursor: pointer; width: 90px; }
+        .enemy.boss { width: 150px; transform: scale(1.3); transform-origin: bottom center; }
+        .enemy.boss .enemy-sprite { font-size: 80px; filter: drop-shadow(0 0 20px rgba(255,0,0,0.5)); }
+        .enemy.selected { filter: drop-shadow(0 0 15px var(--mana)); }
+        .enemy.selected:not(.boss) { transform: translateY(-10px) scale(1.1); }
+        .enemy.selected.boss { transform: scale(1.35) translateY(-5px); }
+        
+        .enemy-sprite { font-size: 45px; filter: drop-shadow(2px 2px 5px #000); animation: breathe 3s infinite alternate ease-in-out; }
+        @keyframes breathe { from { transform: translateY(0) scale(1); } to { transform: translateY(-5px) scale(1.03); } }
+        
+        .enemy-hp-bar { width: 100%; height: 5px; background: #111; border: 1px solid #333; margin-top: 5px; border-radius: 3px; overflow: hidden; position: relative; }
+        .enemy-hp-fill { height: 100%; background: linear-gradient(90deg, #600, #f00); transition: width 0.3s; }
+        .boss-tag { position: absolute; top: -20px; width: 100%; text-align: center; color: var(--hp); font-size: 10px; font-weight: bold; letter-spacing: 1px; text-shadow: 0 0 5px #000; }
+        
+        .status-container { position: absolute; top: -10px; right: -10px; display: flex; gap: 2px; }
+        .status-icon { width: 16px; height: 16px; border-radius: 50%; font-size: 9px; line-height: 16px; text-align: center; font-weight: bold; border: 1px solid #000; background: #222; }
+        .status-bleed { color: var(--hp); border-color: var(--hp); }
+        .status-poison { color: var(--poison); border-color: var(--poison); }
+        .status-stun { color: var(--gold); border-color: var(--gold); }
 
-        #narrative-log { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 80%; background: rgba(5,5,8,0.9); border: 1px solid var(--border); padding: 10px; font-size: 12px; text-align: center; font-style: italic; z-index: 150; border-radius: 4px; border-top: 2px solid var(--gold); }
-
-        /* INIMIGOS */
-        #enemy-row { display: flex; gap: 15px; z-index: 10; align-items: flex-end; justify-content: center; width: 100%; }
-        .enemy { text-align: center; position: relative; transition: transform 0.3s; cursor: pointer; width: 90px; }
-        .enemy.selected { transform: translateY(-15px) scale(1.1); filter: drop-shadow(0 0 15px var(--mana)); }
-        .enemy-sprite { font-size: 50px; filter: drop-shadow(2px 2px 4px #000); animation: breathe 3s infinite alternate ease-in-out; }
-        @keyframes breathe { from { transform: translateY(0) scale(1); } to { transform: translateY(-5px) scale(1.02); } }
-        .enemy-hp-bar { width: 100%; height: 6px; background: #111; border: 1px solid #333; margin-top: 8px; border-radius: 3px; overflow: hidden; }
-        .enemy-hp-fill { height: 100%; background: linear-gradient(90deg, #500, #c00); transition: width 0.3s; }
-
-        /* CARTAS E MÃO */
-        #hand-area { background: #08080a; flex: 1; display: flex; flex-direction: column; border-top: 1px solid var(--border); }
-        #hand { display: flex; gap: 10px; padding: 15px 15px 70px 15px; overflow-x: auto; flex: 1; align-items: center; justify-content: flex-start; z-index: 50; }
-        .card { min-width: 90px; height: 130px; background: linear-gradient(135deg, #1c1c22, #0a0a0c); border: 1px solid #444; border-radius: 6px; position: relative; flex-shrink: 0; text-align: center; padding: 8px; font-size: 10px; transition: 0.2s; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 8px #000; }
-        .card:hover { transform: translateY(-10px); border-color: #888; }
-        .card.active { border-color: var(--mana); box-shadow: 0 0 10px rgba(74,144,226,0.4); }
-        .card.no-mana { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
-        .card.curse { border-color: #8b0000; background: #150000; animation: jitter 0.1s infinite; }
+        /* === MÃO DE CARTAS === */
+        #hand-area { background: #050508; flex: 1; display: flex; flex-direction: column; border-top: 2px solid var(--border); position: relative; z-index: 40; }
+        #hand { display: flex; gap: 8px; padding: 25px 15px 80px 15px; overflow-x: auto; flex: 1; align-items: center; justify-content: flex-start; z-index: 50; perspective: 1000px; }
+        .card { min-width: 95px; height: 130px; background: linear-gradient(135deg, #1c1c22, #0a0a0c); border: 2px solid #333; border-radius: 8px; position: relative; flex-shrink: 0; text-align: center; padding: 6px; font-size: 10px; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 8px 15px #000; transform-style: preserve-3d; }
+        .card:hover { transform: translateY(-15px) rotateZ(calc(-3deg + 6deg * var(--r-tilt))) scale(1.05); border-color: #aaa; box-shadow: 0 15px 25px rgba(0,0,0,0.8); z-index: 60; }
+        .card.active { border-color: var(--mana); box-shadow: 0 0 15px rgba(74,144,226,0.4); }
+        .card.no-mana { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+        .card.curse { border-color: #8b0000; background: #1a0505; animation: jitter 0.15s infinite; }
         @keyframes jitter { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, -1px); } }
-        .card-cost { position: absolute; top: -10px; left: -10px; background: var(--mana); width: 25px; height: 25px; border-radius: 50%; line-height: 25px; font-weight: bold; font-size: 12px; border: 2px solid #000; z-index: 5; }
-        .card-animating { position: fixed !important; z-index: 9999 !important; pointer-events: none; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .card-cost { position: absolute; top: -10px; left: -10px; background: var(--mana); width: 24px; height: 24px; border-radius: 50%; line-height: 24px; font-weight: bold; font-size: 11px; border: 2px solid #000; z-index: 5; box-shadow: 0 0 5px #000;}
+        .card-animating { position: fixed !important; z-index: 9999 !important; pointer-events: none; transition: all 0.25s cubic-bezier(0.3, 0.8, 0.3, 1); }
 
-        #end-turn-btn { height: 50px; flex-shrink: 0; background: #150505; color: var(--hp); border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; border-top: 2px solid var(--gold); width: 100%; transition: 0.3s; letter-spacing: 3px; font-size: 16px; z-index: 1000; }
+        #end-turn-btn { height: 50px; flex-shrink: 0; background: #150505; color: var(--hp); border: none; font-weight: 900; cursor: pointer; text-transform: uppercase; border-top: 3px solid var(--hp); width: 100%; transition: 0.3s; letter-spacing: 4px; font-size: 16px; z-index: 1000; }
         
-        /* --- ARVORE DE HABILIDADES --- */
-        .tree-tier { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; width: 100%; flex-wrap: wrap; }
-        .node { padding: 15px; background: #111; border: 2px solid #333; border-radius: 8px; cursor: pointer; text-align: center; transition: 0.3s; width: 140px; position: relative; }
-        .node::after { content: ''; position: absolute; bottom: -22px; left: 50%; width: 2px; height: 20px; background: #333; transform: translateX(-50%); }
-        .tree-tier:last-child .node::after { display: none; }
-        .node:hover { border-color: var(--soul); background: #1a0f2e; transform: scale(1.05); }
-        .node.bought { border-color: var(--gold); background: #222211; box-shadow: 0 0 15px rgba(212,175,55,0.3); }
+        /* === DADOS, EVENTOS E MOEDA DA MORTE === */
+        #d6-modal, #story-modal, #giant-d20-modal, #coin-modal, #event-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 8000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px;}
+        
+        .dice-d6 { width: 100px; height: 100px; background: #fff; color: #000; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 50px; font-weight: bold; border: 5px solid #555; box-shadow: 0 0 30px #fff; margin-bottom: 20px;}
+        .rolling-d6 { animation: d6roll 1.5s ease-out; }
+        @keyframes d6roll { 0% { transform: rotate(0) scale(0.5); } 100% { transform: rotate(1080deg) scale(1); } }
 
-        /* --- DADOS E MORTES --- */
-        #d20-container { position: absolute; top: 20px; right: 20px; width: 50px; height: 50px; background: #111; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; z-index: 200; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); color: var(--gold); }
-        .rolling { animation: rollD20 0.5s linear; }
-        @keyframes rollD20 { 0% { transform: rotate(0) scale(1); } 50% { transform: rotate(180deg) scale(1.3); } 100% { transform: rotate(360deg) scale(1); } }
+        .giant-d20 { width: 120px; height: 120px; font-size: 50px; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); background: #111; border: 4px solid var(--gold); color: var(--gold); display: flex; align-items: center; justify-content: center; margin: 20px auto; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        .giant-d20:hover { transform: scale(1.1); filter: brightness(1.3); }
+        .giant-d20.death-style { border-color: var(--hp); color: var(--hp); box-shadow: 0 0 60px rgba(139,0,0,0.6); }
+        .spin-normal { animation: spinD20 1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; pointer-events: none; }
+        .spin-slow { animation: spinD20 3.5s cubic-bezier(0.1, 0.9, 0.2, 1) forwards; pointer-events: none; }
+        @keyframes spinD20 { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(720deg) scale(1.4); } 100% { transform: rotate(1440deg) scale(1); } }
 
-        .death-vignette { background: rgba(5,0,0,0.95); box-shadow: inset 0 0 200px #000; }
-        .giant-d20 { width: 150px; height: 150px; font-size: 60px; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); background: #111; border: 4px solid var(--hp); color: var(--hp); display: flex; align-items: center; justify-content: center; margin: 40px auto; cursor: pointer; transition: 0.3s; box-shadow: 0 0 50px rgba(139,0,0,0.5); }
-        .giant-d20:hover { transform: scale(1.1); filter: brightness(1.5); }
-        .slow-spin { animation: slowSpin 3s cubic-bezier(0.1, 0.8, 0.3, 1) forwards; pointer-events: none; }
-        @keyframes slowSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(1440deg); } }
+        .coin { width: 120px; height: 120px; border-radius: 50%; background: radial-gradient(circle, #d4af37, #8b6508); border: 5px solid #ffd700; box-shadow: inset 0 0 20px #503000, 0 0 30px rgba(212,175,55,0.5); display: flex; align-items: center; justify-content: center; font-size: 60px; font-weight: bold; color: #fff; text-shadow: 2px 2px 4px #000; cursor: pointer; transform-style: preserve-3d; }
+        .coin-flip { animation: coinFlipAnim 2s cubic-bezier(0.3, 0.8, 0.3, 1) forwards; pointer-events: none; }
+        @keyframes coinFlipAnim { 0% { transform: rotateY(0deg) translateY(0); } 50% { transform: rotateY(1080deg) translateY(-100px); } 100% { transform: rotateY(2160deg) translateY(0); } }
 
-        .dmg-txt { position: absolute; font-weight: 900; font-size: 35px; pointer-events: none; z-index: 300; animation: fadeUp 1s forwards; text-shadow: 2px 2px #000; }
+        /* === CIDADE E CAÇA-NÍQUEIS === */
+        .town-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; width: 100%; max-width: 800px; margin-top: 15px; }
+        .town-bld { background: #111; border: 2px solid #333; padding: 15px; border-radius: 8px; text-align: center; transition: 0.3s; display: flex; flex-direction: column; justify-content: space-between; }
+        .town-bld:hover { border-color: var(--gold); background: #1a1a1a; transform: translateY(-5px); }
+        
+        .magic-container { position: relative; width: 250px; height: 250px; margin: 20px auto; display: flex; align-items: center; justify-content: center; display: none; }
+        .mandala-base { position: absolute; width: 100%; height: 100%; border-radius: 50%; background: repeating-conic-gradient(from 0deg, transparent 0deg 15deg, rgba(212,175,55,0.2) 15deg 30deg); animation: rotRight 10s linear infinite; }
+        .mandala-mid { position: absolute; width: 80%; height: 80%; border: 3px dotted var(--mana); border-radius: 50%; animation: rotLeft 6s linear infinite; }
+        .mandala-geo { position: absolute; width: 60%; height: 60%; background: transparent; border: 2px solid var(--hp); clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); animation: rotRight 4s linear infinite; }
+        .mandala-core { position: absolute; width: 30%; height: 30%; border: 4px solid var(--gold); border-radius: 50%; animation: rotLeft 2s linear infinite; background: radial-gradient(circle, rgba(255,255,255,0.8), transparent); box-shadow: 0 0 20px #fff; }
+        @keyframes rotRight { to { transform: rotate(360deg); } } @keyframes rotLeft { to { transform: rotate(-360deg); } }
+
+        .slot-machine { width: 100%; max-width: 400px; background: #1a1a20; border: 4px solid var(--gold); padding: 15px; border-radius: 10px; text-align: center; display: none; flex-direction: column; align-items: center; margin: 15px auto; }
+        .slot-container { display: flex; gap: 10px; justify-content: center; margin: 10px 0; }
+        .slot-reel { width: 60px; height: 60px; background: #000; border: 2px solid #333; font-size: 30px; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: var(--gold); }
+
+        /* === ÁRVORE DE HABILIDADES RAMIFICADA === */
+        #soul-modal { background: rgba(5,5,8,0.98); }
+        .tree-container { display: flex; justify-content: space-around; width: 100%; max-width: 800px; margin-top: 20px; flex-wrap: wrap; gap: 20px;}
+        .tree-branch { display: flex; flex-direction: column; align-items: center; gap: 15px; background: rgba(0,0,0,0.5); padding: 15px; border-radius: 8px; border: 1px solid #222; flex: 1; min-width: 200px;}
+        .tree-branch h3 { margin: 0; color: var(--gold); border-bottom: 1px solid #444; padding-bottom: 5px; width: 100%; text-align: center; font-size: 16px; text-transform: uppercase; }
+        .node { background: #111; border: 2px solid #333; padding: 10px; border-radius: 6px; cursor: pointer; text-align: center; transition: 0.3s; width: 100%; position: relative; }
+        .node::after { content: '↓'; position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); color: #444; font-size: 14px; }
+        .node:last-child::after { display: none; }
+        .node.locked { filter: grayscale(1); opacity: 0.4; cursor: not-allowed; }
+        .node.bought { border-color: var(--gold); background: #221; box-shadow: 0 0 10px rgba(212,175,55,0.3); }
+        .node:hover:not(.locked) { border-color: var(--soul); transform: scale(1.05); }
+
+        /* === EFEITOS ESPECIAIS E TEXTO === */
+        .dmg-txt { position: absolute; font-weight: 900; font-size: 32px; pointer-events: none; z-index: 300; animation: fadeUp 1s forwards; text-shadow: 2px 2px #000; white-space: nowrap; }
         @keyframes fadeUp { to { transform: translateY(-100px); opacity: 0; } }
+        #cinematic-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 9000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; transition: opacity 1s; }
+        .cine-text { color: #fff; font-size: 24px; font-style: italic; letter-spacing: 2px; line-height: 1.6; max-width: 700px; opacity: 0; transition: opacity 2s; text-shadow: 0 0 10px #000; }
+        .kcd-death { background: #400 !important; box-shadow: inset 0 0 250px #000; }
+        .kcd-title { color: #000; font-size: 40px; font-weight: 900; letter-spacing: 5px; text-transform: uppercase; margin-bottom: 20px; text-shadow: 0 0 20px rgba(255,0,0,0.6); }
 
-        /* RESPONSIVO MOBILE */
         @media (max-width: 768px) {
             #game-container { flex-direction: column; }
-            #side-panel { height: auto; width: 100%; flex-direction: row; overflow-x: auto; padding: 10px; border-right: none; border-bottom: 1px solid var(--border); align-items: center; }
-            .stat-group { border-bottom: none; border-right: 1px solid var(--border); padding: 0 10px; min-width: 80px; }
-            #stage { height: 30vh; }
+            #side-panel { height: auto; width: 100%; flex-direction: row; overflow-x: auto; padding: 8px; border-right: none; border-bottom: 2px solid var(--border); align-items: center; }
+            .stat-group { border-bottom: none; border-right: 1px solid var(--border); padding: 0 8px; min-width: 75px; }
+            #stage { height: 35vh; }
             #diablo-hud { bottom: 55px; padding: 0 10px; }
-            .globe { width: 65px; height: 65px; border-width: 2px; }
-            .globe-text { font-size: 10px; }
-            #hand { padding-bottom: 70px; gap: 8px; }
-            .card { min-width: 80px; height: 110px; font-size: 9px; padding: 6px; }
-            .card-cost { width: 20px; height: 20px; line-height: 20px; font-size: 10px; }
+            .globe { width: 60px; height: 60px; }
+            .hud-btn { width: 50px; height: 50px; font-size: 20px;}
+            #hand { padding-bottom: 60px; gap: 8px; }
+            .card { min-width: 80px; height: 115px; font-size: 9px; padding: 6px; }
+            .enemy.boss { width: 120px; }
+            .enemy.boss .enemy-sprite { font-size: 70px; }
+            .giant-d20 { width: 100px; height: 100px; font-size: 40px; }
+            .coin { width: 100px; height: 100px; font-size: 40px; }
+            #ui-d20 { width: 40px; height: 40px; font-size: 16px; top: 10px; left: 10px;}
         }
     </style>
 </head>
 <body>
 
 <div id="crt-filter"></div>
+<div id="cinematic-overlay"><div id="cine-content" class="cine-text"></div></div>
+
+<div id="qte-overlay">
+    <div id="qte-label">GOLPE CRÍTICO</div>
+    <div id="qte-target"></div>
+    <div id="qte-cursor"></div>
+</div>
+
+<div id="d6-modal">
+    <h2 style="color:var(--hp); letter-spacing: 4px; margin-bottom: 20px;">A AGONIA INICIAL</h2>
+    <div id="d6-visual" class="dice-d6">?</div>
+    <p id="d6-desc" style="margin-top: 20px; color: #ccc; font-style: italic;"></p>
+</div>
+
+<div id="story-modal">
+    <h2 style="color:var(--gold); border-bottom: 1px solid #444; padding-bottom: 10px; letter-spacing: 2px;">OS OSSOS FALAM</h2>
+    <div id="story-d20" class="giant-d20">?</div>
+    <p id="story-text" style="font-size: 16px; max-width: 500px; font-style: italic; line-height: 1.5; color: #ddd; margin: 20px 0; min-height: 50px;"></p>
+    <button id="story-btn" class="btn-action" style="display:none;" onclick="closeStoryModal()">Avançar ao Altar</button>
+</div>
+
+<div id="giant-d20-modal">
+    <h2 id="gd20-title" style="color:var(--gold); letter-spacing: 4px; margin-bottom: 5px;">O DESTINO AGUARDA</h2>
+    <p id="gd20-subtitle" style="color:#aaa; font-style: italic; margin-bottom: 15px;"></p>
+    <div id="gd20-shape" class="giant-d20">20</div>
+    <p id="gd20-result" style="font-size: 18px; color: #fff; min-height: 25px; margin-top: 15px; max-width: 600px;"></p>
+    <button id="gd20-btn" class="btn-action" style="display:none; margin-top: 20px;">Continuar</button>
+</div>
+
+<div id="coin-modal">
+    <h1 style="color:var(--gold); letter-spacing: 5px;">A MOEDA DE CARONTE</h1>
+    <p style="color:#bbb; font-style: italic; max-width: 400px; margin-bottom: 30px;">Um acordo com a morte. O seu atributo de Sorte influenciará o resultado.</p>
+    <div class="coin" id="death-coin" onclick="flipDeathCoin()">💀</div>
+    <p id="coin-result" style="font-size: 20px; color: #fff; margin-top: 30px; font-weight: bold;"></p>
+    <button id="coin-btn" class="btn-action" style="display:none; margin-top: 20px;">Avançar</button>
+</div>
+
+<div id="event-modal">
+    <h2 id="event-title" style="color:var(--hp); letter-spacing: 2px;">ENCONTRO NAS SOMBRAS</h2>
+    <p id="event-desc" style="max-width: 500px; margin-bottom: 30px; line-height: 1.6; font-style: italic;"></p>
+    <div id="event-choices" style="display:flex; flex-direction:column; gap:10px; width:100%; max-width: 400px;"></div>
+</div>
 
 <div id="creation-overlay" class="overlay" style="display:flex;">
-    <h1 style="color:var(--hp); letter-spacing: 5px; font-size: 28px; text-shadow: 0 0 15px var(--hp); margin-top:0;">VAMPIRE CRAWLERS</h1>
-    
-    <input type="text" id="char-name" placeholder="NOME DO MALDITO" maxlength="15" oninput="updateLore()">
+    <h1 style="color:var(--hp); letter-spacing: 6px; font-size: 28px; text-shadow: 0 0 20px var(--hp); margin-top:0;">VAMPIRE CRAWLERS</h1>
+    <input type="text" id="char-name" placeholder="NOME DO MALDITO" maxlength="12" oninput="updateLore()">
     
     <div id="backstage-stats">
         <span>HP: <b id="pre-hp">100</b></span>
         <span>ATK: <b id="pre-atk">10</b></span>
         <span>ESSÊNCIA: <b id="pre-mana">5</b></span>
+        <span>SORTE: <b id="pre-luck" style="color:var(--luck)">10</b></span>
     </div>
 
-    <div class="setup-group">
-        <small style="color:var(--gold)">LINHAGEM</small>
-        <div class="sel-grid">
-            <div id="r-Humano" class="sel-card active" onclick="setRace('Humano')"><b>Humano</b><span class="desc-pop">+20 HP</span></div>
-            <div id="r-Vampiro" class="sel-card" onclick="setRace('Vampiro')"><b>Vampiro</b><span class="desc-pop">15% Roubo</span></div>
-            <div id="r-Lobisomem" class="sel-card" onclick="setRace('Lobisomem')"><b>Lobisomem</b><span class="desc-pop">+30 Atk</span></div>
-            <div id="r-Espectro" class="sel-card" onclick="setRace('Espectro')"><b>Espectro</b><span class="desc-pop">+2 Mana / -20 HP</span></div>
+    <div class="setup-grid-parent" style="display:flex; gap:10px; width:100%; max-width:800px; flex-wrap: wrap; justify-content: center;">
+        <div class="setup-group" style="flex:1; min-width: 180px;">
+            <small style="color:var(--gold)">LINHAGEM</small>
+            <div class="sel-grid">
+                <div id="r-Humano" class="sel-card active" onclick="setSelect('r','Humano')"><b>Humano</b><span class="desc-pop">+20 HP / +5 Sorte</span></div>
+                <div id="r-Vampiro" class="sel-card" onclick="setSelect('r','Vampiro')"><b>Vampiro</b><span class="desc-pop">15% Roubo / -10 HP</span></div>
+                <div id="r-Lobisomem" class="sel-card" onclick="setSelect('r','Lobisomem')"><b>Lobisomem</b><span class="desc-pop">+30 Atk / -1 Mana</span></div>
+                <div id="r-Espectro" class="sel-card" onclick="setSelect('r','Espectro')"><b>Espectro</b><span class="desc-pop">+2 Mana / -20 HP</span></div>
+            </div>
+        </div>
+        <div class="setup-group" style="flex:1; min-width: 180px;">
+            <small style="color:var(--gold)">ORIGEM (BIOMA)</small>
+            <div class="sel-grid">
+                <div id="o-Cidadela" class="sel-card active" onclick="setSelect('o','Cidadela')"><b>Cidadela</b><span class="desc-pop">+20 Atk Inicial</span></div>
+                <div id="o-Abismo" class="sel-card" onclick="setSelect('o','Abismo')"><b>Abismo</b><span class="desc-pop">+3 Mana Max</span></div>
+                <div id="o-Floresta" class="sel-card" onclick="setSelect('o','Floresta')"><b>Floresta</b><span class="desc-pop">+15% Crítico</span></div>
+                <div id="o-Pico" class="sel-card" onclick="setSelect('o','Pico')"><b>Pico Gélido</b><span class="desc-pop">+40 HP Max</span></div>
+            </div>
+        </div>
+        <div class="setup-group" style="flex:1; min-width: 180px;">
+            <small style="color:var(--hp)">FARDOS (DEFEITOS)</small>
+            <div class="sel-grid">
+                <div id="f-Nenhum" class="sel-card active" onclick="setSelect('f','Nenhum')"><b>Nenhum</b><span class="desc-pop">Sem ônus</span></div>
+                <div id="f-Hemofilia" class="sel-card" onclick="setSelect('f','Hemofilia')"><b>Hemofilia</b><span class="desc-pop">-30 HP / +50 Ouro</span></div>
+                <div id="f-Azarado" class="sel-card" onclick="setSelect('f','Azarado')"><b>Azarado</b><span class="desc-pop">-15 Sorte / +2 Mana</span></div>
+                <div id="f-Amaldicoado" class="sel-card" onclick="setSelect('f','Amaldicoado')"><b>Amaldiçoado</b><span class="desc-pop">1 Maldição / +20 Almas</span></div>
+            </div>
+        </div>
+        <div class="setup-group" style="flex:1; min-width: 180px;">
+            <small style="color:var(--mana)">GRIMÓRIO (FEITIÇO)</small>
+            <div class="sel-grid">
+                <div id="s-Sifao" class="sel-card active" onclick="setSelect('s','Sifao')"><b>Sifão</b><span class="desc-pop">Drena HP em Área</span></div>
+                <div id="s-Escudo" class="sel-card" onclick="setSelect('s','Escudo')"><b>Aegis</b><span class="desc-pop">Cura 50% HP</span></div>
+                <div id="s-Caos" class="sel-card" onclick="setSelect('s','Caos')"><b>Caos</b><span class="desc-pop">Atordoa todos</span></div>
+            </div>
         </div>
     </div>
-
-    <div class="setup-group">
-        <small style="color:var(--gold)">ORIGEM (BIOMA INICIAL)</small>
-        <div class="sel-grid">
-            <div id="o-Cidadela" class="sel-card active" onclick="setOrigin('Cidadela')"><b>Cidadela</b><span class="desc-pop">+20 Atk</span></div>
-            <div id="o-Abismo" class="sel-card" onclick="setOrigin('Abismo')"><b>Abismo</b><span class="desc-pop">+3 Mana</span></div>
-            <div id="o-Mar" class="sel-card" onclick="setOrigin('Mar')"><b>Costa Sangue</b><span class="desc-pop">+60 Ouro</span></div>
-            <div id="o-Floresta" class="sel-card" onclick="setOrigin('Floresta')"><b>Floresta Morta</b><span class="desc-pop">+15% Crítico</span></div>
-        </div>
-    </div>
-
-    <div class="setup-group">
-        <small style="color:var(--gold)">FARDOS (DEFEITOS)</small>
-        <div class="sel-grid">
-            <div id="f-Nenhum" class="sel-card active" onclick="setFlaw('Nenhum')"><b>Nenhum</b><span class="desc-pop">Sem ônus</span></div>
-            <div id="f-Hemofilia" class="sel-card" onclick="setFlaw('Hemofilia')"><b>Hemofilia</b><span class="desc-pop">-30 HP Máx / +20 Ouro</span></div>
-            <div id="f-Miopia" class="sel-card" onclick="setFlaw('Miopia')"><b>Miopia</b><span class="desc-pop">-10% Crítico / +1 Mana</span></div>
-            <div id="f-Amaldicoado" class="sel-card" onclick="setFlaw('Amaldicoado')"><b>Amaldiçoado</b><span class="desc-pop">1 Maldição Extra / +10 Almas</span></div>
-        </div>
-    </div>
-
-    <div id="lore-box">Sua saga se inicia nas sombras.</div>
-    <button class="btn-action" onclick="startGame()">INICIAR SAGA</button>
+    <div id="lore-box">O abismo forjou sua alma. Role os dados.</div>
+    <button class="btn-action" onclick="rollD6Start()">INICIAR SAGA</button>
 </div>
 
 <div id="game-container">
     <div id="side-panel">
-        <div class="stat-group"><b>Agonia</b><span id="st-diff" style="color:#d00; font-size:11px">Nível -</span></div>
+        <div class="stat-group"><b>Agonia</b><span id="st-diff" style="color:#d00; font-size:12px">Nível -</span></div>
         <div class="stat-group"><b>Nome</b><span id="st-name" class="stat-val">-</span></div>
         <div class="stat-group"><b>Tesouro</b><span id="st-gold" class="stat-val" style="color:var(--gold)">0</span></div>
         <div class="stat-group"><b>Almas</b><span id="st-souls" class="stat-val" style="color:var(--soul)">0</span></div>
         <div class="stat-group"><b>Poder Bruto</b><span id="st-atk" class="stat-val">+0</span></div>
-        <div class="stat-group"><b>Destreza Crítica</b><span id="st-crit" style="color:var(--mana)">10%</span></div>
+        <div class="stat-group"><b>Sorte</b><span id="st-luck" class="stat-val" style="color:var(--luck)">10</span></div>
+        <div class="stat-group"><b>Precisão</b><span id="st-crit" style="color:var(--mana)">10%</span></div>
         <div class="stat-group" style="flex:1; border:none;"><b>Relíquias</b><div id="relics-container"></div></div>
     </div>
 
     <div id="main-view">
-        <div id="d20-container">20</div>
+        <div id="time-tint"></div>
+        <div id="weather-tint"></div>
+        
+        <div id="ui-d20">20</div>
         <div id="narrative-log">A escuridão aguarda...</div>
         
         <div id="stage">
-            <div class="parallax" id="px-b"></div>
-            <div id="enemy-row"></div>
+            <div id="particles-container"></div>
+            <div class="stage-fog"></div>
+            <div id="battle-grid">
+                <div class="grid-cell" id="cell-0"></div><div class="grid-cell" id="cell-1"></div><div class="grid-cell" id="cell-2"></div>
+                <div class="grid-cell" id="cell-3"></div><div class="grid-cell" id="cell-4"></div><div class="grid-cell" id="cell-5"></div>
+            </div>
         </div>
 
         <div id="hand-area">
@@ -206,6 +318,16 @@
                 <div class="globe-wrapper">
                     <div class="globe"><div id="hp-fill" class="globe-fill"></div><div id="hp-text" class="globe-text">0/0</div></div>
                 </div>
+                
+                <div class="action-btns-center">
+                    <button class="hud-btn" id="potion-btn" onclick="usePotion()">
+                        🧪<span class="btn-tag" id="potion-count">1 Frasco</span>
+                    </button>
+                    <button class="hud-btn" id="spell-btn" onclick="castSpell()">
+                        <span id="spell-icon-ui">🔮</span><span class="btn-tag" id="spell-cd-ui" style="color:var(--gold)">Pronto</span>
+                    </button>
+                </div>
+
                 <div class="globe-wrapper">
                     <div class="globe"><div id="mana-fill" class="globe-fill"></div><div id="mana-text" class="globe-text">0/0</div></div>
                 </div>
@@ -216,129 +338,190 @@
     </div>
 </div>
 
-<div id="story-modal" class="overlay">
-    <h2 style="color:var(--gold); border-bottom: 1px solid #444; padding-bottom: 10px;">OS DADOS DO DESTINO</h2>
-    <div id="story-d20" style="font-size: 40px; color: var(--gold); margin: 20px 0; font-weight: bold;">?</div>
-    <p id="story-text" style="font-size: 16px; max-width: 500px; font-style: italic; line-height: 1.5; color: #ddd;"></p>
-    <button class="btn-action" onclick="closeStoryModal()">Avançar</button>
-</div>
+<div id="town-modal" class="overlay">
+    <h1 style="color:var(--gold); letter-spacing: 5px; margin-bottom: 5px;">O REFÚGIO PROFANO</h1>
+    <p style="color:#aaa; font-style: italic;">Uma breve trégua na sua descida infinita.</p>
+    
+    <div id="magic-anim" class="magic-container">
+        <div class="mandala-base"></div><div class="mandala-mid"></div><div class="mandala-geo"></div><div class="mandala-core"></div>
+    </div>
 
-<div id="event-modal" class="overlay">
-    <h2 id="event-title" style="color:var(--hp);">ENCONTRO</h2>
-    <p id="event-desc" style="max-width: 500px; margin-bottom: 30px; line-height: 1.6;"></p>
-    <div id="event-choices" style="display:flex; flex-direction:column; gap:10px; width:100%; max-width: 400px;"></div>
+    <div class="slot-machine" id="slot-machine-ui">
+        <h3 style="color:var(--gold); margin:0;">ROLETA DO DESTINO</h3>
+        <p style="font-size:10px; color:#888;">Arma | Relíquia | Maldição</p>
+        <div class="slot-container">
+            <div id="slot-1" class="slot-reel">?</div><div id="slot-2" class="slot-reel">?</div><div id="slot-3" class="slot-reel">?</div>
+        </div>
+        <button id="slot-spin-btn" class="btn-action" style="padding: 10px; font-size: 12px; width: 100%;" onclick="spinSlots()">Rodar (50 Ouro)</button>
+        <button id="slot-close-btn" class="btn-action" style="display:none; padding: 10px; width: 100%;" onclick="endSlotInteraction()">Reivindicar</button>
+    </div>
+
+    <div class="town-grid" id="town-actions">
+        <div class="town-bld">
+            <h3 style="color:var(--hp); margin-top:0;">Taverna</h3>
+            <p style="font-size:11px; color:#aaa;">Restaura Vigor, Poções, Limpa Maldições e devolve a Moeda da Morte.</p>
+            <button class="btn-action" style="padding: 10px; font-size:11px;" onclick="townTavern()">Descansar (40 Ouro)</button>
+        </div>
+        <div class="town-bld">
+            <h3 style="color:#888; margin-top:0;">Ferreiro</h3>
+            <p style="font-size:11px; color:#aaa;">Reforja a arma (+15 Dano e Efeito de Sangramento).</p>
+            <button class="btn-action" style="padding: 10px; font-size:11px;" onclick="townBlacksmith()">Reforjar (80 Ouro)</button>
+        </div>
+        <div class="town-bld">
+            <h3 style="color:var(--mana); margin-top:0;">Ocultista</h3>
+            <p style="font-size:11px; color:#aaa;">Magia no D20. Risco e recompensa.</p>
+            <button class="btn-action" style="padding: 10px; font-size:11px;" onclick="townSpell()">Rituais (Grátis)</button>
+        </div>
+        <div class="town-bld">
+            <h3 style="color:var(--gold); margin-top:0;">Cassino Obscuro</h3>
+            <p style="font-size:11px; color:#aaa;">Aposte sua vida por glória e maldições.</p>
+            <button class="btn-action" style="padding: 10px; font-size:11px;" onclick="showSlotMachine()">Apostar</button>
+        </div>
+    </div>
+    <button id="btn-leave-town" class="btn-action" style="margin-top:20px; background:#111; border-color:#444;" onclick="leaveTown()">Continuar Descida</button>
 </div>
 
 <div id="soul-modal" class="overlay">
-    <h2 style="color:var(--soul); margin-bottom: 5px;">ALTAR DE ASCENSÃO</h2>
-    <p style="color:#888; margin-top:0;">Sacrifique almas para obter poder duradouro.</p>
-    <div id="soul-ui" style="display:flex; flex-direction:column; align-items:center; width:100%; max-width:800px; margin-top:20px;"></div>
-    <button class="btn-action" onclick="closeModal('soul-modal')" style="margin-top:30px;">Retornar às Sombras</button>
-</div>
-
-<div id="death-modal" class="overlay death-vignette">
-    <h1 style="color:var(--hp); letter-spacing: 8px; font-size: 36px;">O FIM DA JORNADA</h1>
-    <p style="color:#aaa;">Role os dados uma última vez para descobrir o paradeiro da sua alma.</p>
-    <div id="death-d20" class="giant-d20" onclick="rollDeathD20()">20</div>
-    <p id="death-result" style="font-size: 20px; font-style: italic; color: var(--gold); max-width: 600px; min-height: 60px;"></p>
-    <button id="death-btn" class="btn-action" style="display:none; margin-top: 20px;" onclick="location.reload()">Aceitar o Destino</button>
+    <h1 style="color:var(--soul); margin-bottom: 5px; letter-spacing:3px;">ALTAR DE ASCENSÃO</h1>
+    <p style="color:#888; margin-top:0; margin-bottom: 20px;">Trilhe o caminho do poder consumindo as almas dos derrotados.</p>
+    
+    <div class="tree-container" id="soul-tree-ui"></div>
+    <button class="btn-action" onclick="closeSoulTree()" style="margin-top:30px; background:#111; border-color:#444;">Prosseguir</button>
 </div>
 
 <script>
-// --- MOTOR DE ÁUDIO PROCEDURAL (Web Audio API) ---
+// === MOTOR DE ÁUDIO ===
 const AudioEngine = {
-    ctx: null, osc1: null, osc2: null, gain: null, lfo: null,
-    init() {
-        if(!this.ctx) {
-            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-            this.gain = this.ctx.createGain();
-            this.gain.connect(this.ctx.destination);
-            this.gain.gain.value = 0.05; // Volume baixo
-        }
-    },
+    ctx: null, ambOsc: null, ambGain: null, lfo: null,
+    init() { if(!this.ctx) { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.ambGain = this.ctx.createGain(); this.ambGain.connect(this.ctx.destination); this.ambGain.gain.value = 0.04; } },
     playAmbient(isBloodRain = false) {
-        if(!this.ctx) return;
-        if(this.osc1) { this.osc1.stop(); this.osc2.stop(); this.lfo.stop(); }
-        
-        this.osc1 = this.ctx.createOscillator();
-        this.osc2 = this.ctx.createOscillator();
-        this.lfo = this.ctx.createOscillator();
-        const lfoGain = this.ctx.createGain();
-
-        this.osc1.type = isBloodRain ? 'sawtooth' : 'sine';
-        this.osc2.type = isBloodRain ? 'square' : 'triangle';
-        this.lfo.type = 'sine';
-
-        this.osc1.frequency.value = isBloodRain ? 45 : 55;
-        this.osc2.frequency.value = isBloodRain ? 48 : 58;
-        this.lfo.frequency.value = isBloodRain ? 0.5 : 0.1;
-
-        lfoGain.gain.value = isBloodRain ? 15 : 5;
-        this.lfo.connect(lfoGain);
-        lfoGain.connect(this.osc1.frequency);
-        lfoGain.connect(this.osc2.frequency);
-
-        this.osc1.connect(this.gain);
-        this.osc2.connect(this.gain);
-
-        this.osc1.start(); this.osc2.start(); this.lfo.start();
+        if(!this.ctx) return; if(this.ambOsc) { this.ambOsc.stop(); this.lfo.stop(); }
+        this.ambOsc = this.ctx.createOscillator(); this.lfo = this.ctx.createOscillator(); const lfoGain = this.ctx.createGain();
+        this.ambOsc.type = isBloodRain ? 'sawtooth' : 'sine'; 
+        this.ambOsc.frequency.value = isBloodRain ? 55 : 45; 
+        this.lfo.type = 'sine'; this.lfo.frequency.value = isBloodRain ? 0.2 : 0.05; 
+        lfoGain.gain.value = isBloodRain ? 10 : 3;
+        this.lfo.connect(lfoGain); lfoGain.connect(this.ambOsc.frequency); this.ambOsc.connect(this.ambGain);
+        this.ambOsc.start(); this.lfo.start();
     },
-    stop() {
-        if(this.osc1) { this.osc1.stop(); this.osc2.stop(); this.lfo.stop(); }
-    }
+    playHit() {
+        if(!this.ctx) return; const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.setValueAtTime(120, this.ctx.currentTime); o.frequency.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        g.gain.setValueAtTime(0.2, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + 0.1);
+    },
+    playMagic() {
+        if(!this.ctx) return; const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(300, this.ctx.currentTime); o.frequency.linearRampToValueAtTime(900, this.ctx.currentTime + 0.4);
+        g.gain.setValueAtTime(0, this.ctx.currentTime); g.gain.linearRampToValueAtTime(0.15, this.ctx.currentTime + 0.2); g.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.4);
+        o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + 0.4);
+    },
+    playD20Tick() {
+        if(!this.ctx) return; const o = this.ctx.createOscillator(); const g = this.ctx.createGain();
+        o.type = 'square'; o.frequency.setValueAtTime(600, this.ctx.currentTime);
+        g.gain.setValueAtTime(0.05, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+        o.connect(g); g.connect(this.ctx.destination); o.start(); o.stop(this.ctx.currentTime + 0.05);
+    },
+    stop() { if(this.ambOsc) { this.ambOsc.stop(); this.lfo.stop(); } }
 };
 
-// --- DADOS DO JOGO ---
-const Biomes = [
-    { id: 'Cidadela', n: "Cripta", bg: "radial-gradient(#1a0505, #000)", back: "🏰 🩸 🦇 🧱", enemies: ["🦇", "💀", "🧟", "🕷️"], log: "As pedras choram o sangue da nobreza caída." },
-    { id: 'Abismo', n: "Inferno", bg: "radial-gradient(#200500, #000)", back: "🔥 🌋 ⛓️ 👹", enemies: ["👺", "🐉", "🔥", "👹"], log: "O calor distorce sua mente. O abismo te observa." },
-    { id: 'Mar', n: "Costa Sangue", bg: "radial-gradient(#051015, #000)", back: "🌊 ⚓ 🦑 🏴‍☠️", enemies: ["🏴‍☠️", "🦈", "🐚", "🦑"], log: "A maré traz os sussurros dos afogados." },
-    { id: 'Floresta', n: "Floresta Morta", bg: "radial-gradient(#0a150a, #000)", back: "🌲 🦉 🍂 🐺", enemies: ["🐺", "🌲", "🦅", "🐗"], log: "As raízes tentam aprisionar seus calcanhares." }
+// === DADOS DO JOGO ===
+const Bosses = [
+    { n: "Rei Cadáver", hp: 1000, atk: 50, i: "🧛‍♂️" }, { n: "Lorde Demônio", hp: 1800, atk: 80, i: "👹" },
+    { n: "Behemoth", hp: 3000, atk: 120, i: "🦖" }, { n: "O Lich Rei", hp: 5000, atk: 180, i: "🧙‍♂️" }
 ];
+const Biomes = [
+    { id: 'Cidadela', bg: "#110000", enemies: ["🦇", "💀", "🧟", "🕷️"], log: "As pedras choram sangue." },
+    { id: 'Abismo', bg: "#220500", enemies: ["👺", "🐉", "🔥", "👹"], log: "O abismo te consome." },
+    { id: 'Floresta', bg: "#051105", enemies: ["🐺", "🌲", "🦅", "🐗"], log: "As raízes são garras." },
+    { id: 'Pico', bg: "#050515", enemies: ["⛄", "🧊", "🏔️", "👻"], log: "O frio ceifa a alma." }
+];
+
+const CycleColors = ["rgba(255,100,0,0.15)", "rgba(255,255,255,0)", "rgba(100,0,100,0.2)", "rgba(0,0,50,0.5)"];
 
 const WeaponsPool = {
-    'Foice': { n: "FOICE", d: 50, c: 3, i: "🔨" },
-    'Adaga': { n: "ADAGAS", d: 15, c: 0, i: "🗡️" },
-    'Espada': { n: "ESPADA LONGA", d: 35, c: 2, i: "⚔️" },
-    'Cajado': { n: "CAJADO", d: 25, c: 4, i: "🦯", a: true }
+    'Foice': { n: "FOICE", d: 50, c: 3, i: "🔨", effect: 'bleed' },
+    'Adaga': { n: "ADAGAS", d: 15, c: 0, i: "🗡️", effect: 'poison' },
+    'Espada': { n: "ESPADA", d: 35, c: 2, i: "⚔️", effect: 'none' },
+    'Cajado': { n: "CAJADO", d: 25, c: 4, i: "🦯", a: true, effect: 'none' },
+    'Chicote': { n: "CHICOTE", d: 20, c: 1, i: "➰", effect: 'bleed' },
+    'Besta': { n: "BESTA", d: 45, c: 2, i: "🏹", effect: 'none' },
+    'Martelo': { n: "MARTELO", d: 60, c: 4, i: "🪓", effect: 'stun' }
+};
+const CursesPool = [
+    { n: "CORROSÃO", d: 25, c: 0, i: "🧿", desc: "Perde 25 Vigor.", type: 'curse' },
+    { n: "HEMOFILIA", d: 40, c: 0, i: "🩸", desc: "Perde 40 Vigor.", type: 'curse' },
+    { n: "LOUCURA", d: 10, c: 2, i: "👁️", desc: "Drena 10 HP e 2 Essência.", type: 'curse' }
+];
+const RelicsPool = [
+    { n: "Cálice", d: "+10% Vamp", i: "🍷", f: () => Player.vamp += 0.1 },
+    { n: "Anel", d: "+40 HP", i: "💍", f: () => { Player.maxHp += 40; Player.hp += 40; } },
+    { n: "Crânio", d: "+25 Poder", i: "💀", f: () => Player.atk += 25 },
+    { n: "Trevo", d: "+15 Sorte", i: "🍀", f: () => Player.luck += 15 },
+    { n: "Coroa", d: "Reflete Dano", i: "👑", f: () => Player.thorns = true }
+];
+const SpellsPool = {
+    'Sifao': { id: 'Sifao', n: "Sifão", i: "🌪️", cdMax: 3, desc: "Drena 40 HP de todos os inimigos.", cast: () => {
+        enemies.forEach(e => { if(!e)return; let d = 40 + Player.atk; e.hp -= d; Player.hp = Math.min(Player.maxHp, Player.hp + Math.floor(d*0.5)); popDmg(d, 'enemy'); });
+    }},
+    'Escudo': { id: 'Escudo', n: "Aegis", i: "🛡️", cdMax: 5, desc: "Cura 50% da Vida Máxima.", cast: () => {
+        Player.hp = Math.min(Player.maxHp, Player.hp + Math.floor(Player.maxHp * 0.5)); popDmg(Math.floor(Player.maxHp*0.5), 'player');
+    }},
+    'Caos': { id: 'Caos', n: "Caos", i: "🔥", cdMax: 4, desc: "Atordoa todos os inimigos.", cast: () => {
+        enemies.forEach(e => { if(e){e.status.stun = 1; popDmg(0, 'enemy');} });
+    }}
 };
 
-const CursesPool = [
-    { n: "CORROSÃO", d: 25, c: 0, i: "🧿", desc: "A carne derrete. Perde 25 Vigor." },
-    { n: "PARANOIA", d: 0, c: 2, i: "👁️", desc: "Sombras enganosas. Drena 2 Essência." },
-    { n: "HEMOFILIA", d: 40, c: 0, i: "🩸", desc: "O sangue não estanca. Perde 40 Vigor." }
-];
-
-const RelicsPool = [
-    { n: "Cálice de Osso", d: "+10% Vamp", i: "🍷", f: () => Player.vamp += 0.1 },
-    { n: "Anel do Falso Deus", d: "+40 HP", i: "💍", f: () => { Player.maxHp += 40; Player.hp += 40; } },
-    { n: "Crânio Ancestral", d: "+20 Poder", i: "💀", f: () => Player.atk += 20 },
-    { n: "Amuleto Fétido", d: "+15% Crítico", i: "📿", f: () => Player.crit += 0.15 }
+const RandomEvents = [
+    {
+        title: "Taverna Abandonada", desc: "O cheiro de álcool velho conforta. (+40 HP / -30 Ouro)",
+        choices: [
+            { t: "Beber", f: () => { if(Player.gold>=30){Player.gold-=30; Player.hp=Math.min(Player.maxHp, Player.hp+40); closeEvent();}else{alert("Sem ouro!");} } },
+            { t: "Ignorar", f: () => closeEvent() }
+        ]
+    },
+    {
+        title: "Meretrizes do Abismo", desc: "A luxúria custa caro. (Restaura todo HP e Poções / -100 Ouro)",
+        choices: [
+            { t: "Ceder ao Desejo", f: () => { if(Player.gold>=100){Player.gold-=100; Player.hp=Player.maxHp; Player.potions=2; closeEvent();}else{alert("Sem ouro!");} } },
+            { t: "Foco", f: () => closeEvent() }
+        ]
+    },
+    {
+        title: "Chuva de Sangue", desc: "Os céus choram. Aumenta a insanidade das criaturas.",
+        choices: [
+            { t: "Enfrentar a tempestade", f: () => { 
+                Player.isBloodRain = true; 
+                document.getElementById('weather-tint').style.opacity = '1';
+                AudioEngine.playAmbient(true);
+                closeEvent(); 
+            }}
+        ]
+    }
 ];
 
 const SkillTree = [
-    [ // Tier 1: Iniciante
-        { id: 'a1', n: 'Força Titânica', d: '+20 Atk', c: 5, f: () => Player.atk += 20 },
-        { id: 'h1', n: 'Vigor Imortal', d: '+50 HP', c: 5, f: () => { Player.maxHp += 50; Player.hp += 50; } },
-        { id: 'g1', n: 'Avareza', d: '+50 Tesouro', c: 3, f: () => Player.gold += 50 }
-    ],
-    [ // Tier 2: Intermediário
-        { id: 'm1', n: 'Essência Astral', d: '+1 Essência', c: 10, f: () => Player.maxMana += 1 },
-        { id: 'v1', n: 'Toque Vampírico', d: '+10% Vamp', c: 10, f: () => Player.vamp += 0.10 },
-        { id: 'c1', n: 'Golpe Fatal', d: '+15% Crítico', c: 10, f: () => Player.crit += 0.15 }
-    ],
-    [ // Tier 3: Profano
-        { id: 'a2', n: 'Fúria Cega', d: '+50 Atk', c: 20, f: () => Player.atk += 50 },
-        { id: 'h2', n: 'Pele Escamada', d: '+100 HP', c: 20, f: () => { Player.maxHp += 100; Player.hp += 100; } }
-    ]
+    { id: 'blood', title: 'Caminho do Sangue', nodes: [
+        { id: 'b1', n: 'Vigor Imortal', d: '+50 HP', c: 5, req: null, bought: false, f: () => { Player.maxHp += 50; Player.hp += 50; } },
+        { id: 'b2', n: 'Força Titânica', d: '+30 Atk', c: 10, req: 'b1', bought: false, f: () => Player.atk += 30 },
+        { id: 'b3', n: 'Sede Eterna', d: '+15% Vamp', c: 20, req: 'b2', bought: false, f: () => Player.vamp += 0.15 }
+    ]},
+    { id: 'void', title: 'Caminho do Vazio', nodes: [
+        { id: 'v1', n: 'Essência Astral', d: '+1 Essência', c: 5, req: null, bought: false, f: () => Player.maxMana += 1 },
+        { id: 'v2', n: 'Avareza', d: '+100 Ouro', c: 10, req: 'v1', bought: false, f: () => Player.gold += 100 },
+        { id: 'v3', n: 'Mente Cópia', d: '+2 Essência', c: 20, req: 'v2', bought: false, f: () => Player.maxMana += 2 }
+    ]},
+    { id: 'shadow', title: 'Caminho da Sombra', nodes: [
+        { id: 's1', n: 'Sorte Torta', d: '+10 Sorte', c: 5, req: null, bought: false, f: () => Player.luck += 10 },
+        { id: 's2', n: 'Golpe Fatal', d: '+15% Crítico', c: 10, req: 's1', bought: false, f: () => Player.crit += 0.15 },
+        { id: 's3', n: 'Mestre da Fuga', d: '+20 Sorte', c: 20, req: 's2', bought: false, f: () => Player.luck += 20 }
+    ]}
 ];
 
 const Player = {
-    name: "Maldito", race: "Humano", origin: "Cidadela", flaw: "Nenhum", 
-    hp: 100, maxHp: 100, mana: 5, maxMana: 5, gold: 0, souls: 0, 
-    atk: 10, crit: 0.1, vamp: 0, kills: 0, worldIdx: 0, 
-    relics: [], curses: [], equip: [], diff: 1, startWeapon: WeaponsPool['Espada'],
-    isBloodRain: false
+    name: "Maldito", race: "Humano", origin: "Cidadela", flaw: "Nenhum", spellId: "Sifao",
+    hp: 100, maxHp: 100, mana: 5, maxMana: 5, gold: 0, souls: 0, atk: 10, crit: 0.1, vamp: 0, luck: 10, kills: 0, diff: 1, worldIdx: 0,
+    relics: [], curses: [], equip: [], startWeapon: null, status: { bleed: 0, poison: 0 }, spellCd: 0, potions: 1, usedCoin: false, isBloodRain: false
 };
 
 let enemies = [];
@@ -346,453 +529,544 @@ let selectedIdx = 0;
 let isTurnEnding = false;
 let waveCount = 0;
 
-// --- INICIALIZAÇÃO E CRIAÇÃO ---
-function setRace(r) { Player.race = r; activeBtn('r-', r); updateLore(); }
-function setOrigin(o) { 
-    Player.origin = o; 
-    Player.worldIdx = Biomes.findIndex(b => b.id === o);
-    activeBtn('o-', o); updateLore(); 
+// === SISTEMA DE PARTÍCULAS ===
+function initParticles() {
+    const stage = document.getElementById('particles-container');
+    stage.innerHTML = '';
+    for(let i=0; i<40; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = (Math.random() * 15 + 10) + 's';
+        p.style.animationDelay = (Math.random() * 5) + 's';
+        const size = Math.random() * 30 + 10;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        
+        let shape = Math.floor(Math.random() * 3);
+        if(shape === 0) p.style.borderRadius = '50%'; // Circle
+        else if(shape === 1) { p.style.clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)'; p.style.background = 'rgba(212,175,55,0.05)'; } // Triangle
+        else p.style.borderRadius = '4px'; // Square
+        
+        stage.appendChild(p);
+    }
 }
-function setFlaw(f) { Player.flaw = f; activeBtn('f-', f); updateLore(); }
 
-function activeBtn(p, id) { 
-    document.querySelectorAll(`[id^="${p}"]`).forEach(el => el.classList.remove('active')); 
-    if(document.getElementById(p+id)) document.getElementById(p+id).classList.add('active'); 
+// === CRIAÇÃO E D6 ===
+function setSelect(type, val) {
+    if(type==='r') Player.race = val; if(type==='o') Player.origin = val; if(type==='f') Player.flaw = val; if(type==='s') Player.spellId = val;
+    document.querySelectorAll(`[id^="${type}-"]`).forEach(e=>e.classList.remove('active'));
+    document.getElementById(`${type}-${val}`).classList.add('active'); updateLore();
 }
 
 function updateLore() {
-    let hp = 100, atk = 10, mana = 5;
-    
-    // Raça
-    if(Player.race === 'Humano') hp += 20;
-    if(Player.race === 'Vampiro') hp -= 10;
-    if(Player.race === 'Lobisomem') atk += 30;
-    if(Player.race === 'Espectro') { mana += 2; hp -= 20; }
-    
-    // Origem
-    if(Player.origin === 'Cidadela') atk += 20;
-    if(Player.origin === 'Abismo') mana += 3;
-    if(Player.origin === 'Mar') hp += 10;
-    
-    // Defeitos
-    if(Player.flaw === 'Hemofilia') hp -= 30;
-    if(Player.flaw === 'Miopia') mana += 1;
-    
-    document.getElementById('pre-hp').innerText = hp;
-    document.getElementById('pre-atk').innerText = atk;
-    document.getElementById('pre-mana').innerText = mana;
+    let hp = 100, atk = 10, mana = 5, luck = 10;
+    if(Player.race === 'Humano') { hp += 20; luck += 5; } if(Player.race === 'Vampiro') hp -= 10; if(Player.race === 'Lobisomem') { atk += 30; mana -= 1; } if(Player.race === 'Espectro') { hp -= 20; mana += 2; }
+    if(Player.origin === 'Cidadela') atk += 20; if(Player.origin === 'Abismo') mana += 3; if(Player.origin === 'Pico') hp += 40;
+    if(Player.flaw === 'Hemofilia') hp -= 30; if(Player.flaw === 'Azarado') { luck -= 15; mana += 2; }
+    document.getElementById('pre-hp').innerText = hp; document.getElementById('pre-atk').innerText = atk; document.getElementById('pre-mana').innerText = Math.max(1, mana); document.getElementById('pre-luck').innerText = luck;
 }
 
-function startGame() {
+function rollD6Start() {
     AudioEngine.init();
-    AudioEngine.playAmbient(false);
-    
     Player.name = document.getElementById('char-name').value || "Maldito";
+    Player.startWeapon = {...WeaponsPool['Espada']}; 
     
-    // Aplicar stats
-    if(Player.race === 'Humano') Player.maxHp += 20;
-    if(Player.race === 'Vampiro') Player.vamp += 0.15;
-    if(Player.race === 'Lobisomem') Player.atk += 30;
-    if(Player.race === 'Espectro') { Player.maxMana += 2; Player.maxHp -= 20; }
-    
-    if(Player.origin === 'Cidadela') Player.atk += 20;
-    if(Player.origin === 'Abismo') Player.maxMana += 3;
-    if(Player.origin === 'Mar') Player.gold += 60;
-    if(Player.origin === 'Floresta') Player.crit += 0.15;
-    
-    if(Player.flaw === 'Hemofilia') { Player.maxHp -= 30; Player.gold += 20; }
-    if(Player.flaw === 'Miopia') { Player.crit -= 0.1; Player.maxMana += 1; }
-    if(Player.flaw === 'Amaldicoado') { 
-        Player.curses.push({...CursesPool[0], type: 'curse'}); 
-        Player.souls += 10; 
-    }
-
+    if(Player.race === 'Humano') { Player.maxHp += 20; Player.luck += 5; } if(Player.race === 'Vampiro') Player.vamp += 0.15; if(Player.race === 'Lobisomem') { Player.atk += 30; Player.maxMana = Math.max(1, Player.maxMana - 1); } if(Player.race === 'Espectro') { Player.maxHp -= 20; Player.maxMana += 2; }
+    if(Player.origin === 'Cidadela') Player.atk += 20; if(Player.origin === 'Abismo') Player.maxMana += 3; if(Player.origin === 'Floresta') Player.crit += 0.15; if(Player.origin === 'Pico') Player.maxHp += 40;
+    if(Player.flaw === 'Hemofilia') { Player.maxHp -= 30; Player.gold += 50; } if(Player.flaw === 'Azarado') { Player.luck -= 15; Player.maxMana += 2; } if(Player.flaw === 'Amaldicoado') { Player.curses.push({...CursesPool[0]}); Player.souls += 20; }
     Player.hp = Player.maxHp; Player.mana = Player.maxMana;
-    
-    // Agonia inicial (Dificuldade baseada em D6 oculto)
-    Player.diff = Math.floor(Math.random()*6)+1;
-    
+
     document.getElementById('creation-overlay').style.display = 'none';
-    spawnEnemies();
+    
+    const modal = document.getElementById('d6-modal');
+    const visual = document.getElementById('d6-visual');
+    const desc = document.getElementById('d6-desc');
+    modal.style.display = 'flex'; visual.classList.add('rolling-d6');
+    
+    let count = 0;
+    const interval = setInterval(() => {
+        AudioEngine.playD20Tick(); visual.innerText = Math.floor(Math.random()*6)+1; count++;
+        if(count > 15) {
+            clearInterval(interval);
+            const val = Math.floor(Math.random()*6)+1;
+            Player.diff = val; visual.innerText = val; visual.classList.remove('rolling-d6');
+            desc.innerText = `NÍVEL DE AGONIA ${val}: As criaturas escalam mais rapidamente.`;
+            setTimeout(() => { modal.style.display = 'none'; startCinematicAfterD6(); }, 2500);
+        }
+    }, 100);
 }
 
-// --- LOOP DO JOGO ---
-function spawnEnemies() {
-    enemies = []; isTurnEnding = false;
-    document.getElementById('end-turn-btn').disabled = false;
-    Player.mana = Player.maxMana;
-    waveCount++;
+async function startCinematicAfterD6() {
+    initParticles();
+    await playCinematic(["O sangue chama...", "A jornada será implacável."], false);
+    AudioEngine.playAmbient(); spawnEnemies();
+}
 
-    if(Player.kills > 0 && waveCount % 3 === 0) Player.worldIdx++;
+async function playCinematic(texts, isDeath) {
+    const overlay = document.getElementById('cinematic-overlay'); const content = document.getElementById('cine-content');
+    overlay.style.display = 'flex'; if(isDeath) { overlay.classList.add('kcd-death'); content.classList.add('kcd-title'); } else { overlay.classList.remove('kcd-death'); content.classList.remove('kcd-title'); }
+    overlay.style.opacity = '1';
+    for(let txt of texts) { content.innerText = txt; content.style.opacity = '1'; await new Promise(r => setTimeout(r, 2000)); content.style.opacity = '0'; await new Promise(r => setTimeout(r, 800)); }
+    if(!isDeath) { overlay.style.opacity = '0'; setTimeout(() => { overlay.style.display = 'none'; }, 1000); }
+}
 
-    const w = Biomes[Player.worldIdx % Biomes.length];
-    document.getElementById('stage').style.background = w.bg;
+// === COMBATE, GRID E QTE ===
+async function spawnEnemies() {
+    enemies = Array(6).fill(null); isTurnEnding = false; document.getElementById('end-turn-btn').disabled = false;
+    Player.mana = Player.maxMana; waveCount++;
     
-    // Repete o background para criar volume
-    let bgStr = "";
-    for(let i=0; i<5; i++) bgStr += w.back + " ";
-    document.getElementById('px-b').innerText = bgStr;
+    const timeCycle = waveCount % 4; document.getElementById('time-tint').style.background = CycleColors[timeCycle];
     
-    log(w.log);
-    
-    const count = Math.min(4, 1 + Math.floor(Player.kills / 8));
-    const weatherMult = Player.isBloodRain ? 1.3 : 1;
+    const weatherMult = Player.isBloodRain ? 1.2 : 1;
+    const hpMult = (1 + Player.diff * 0.15) * Math.pow(1.05, waveCount) * weatherMult;
+    const atkMult = (1 + Player.diff * 0.10) * Math.pow(1.04, waveCount) * weatherMult;
 
-    for(let i=0; i<count; i++) {
-        const hp = Math.floor((80 + Player.kills*15) * (1 + (Player.diff * 0.1)) * weatherMult);
-        enemies.push({ 
-            i: w.enemies[Math.floor(Math.random()*w.enemies.length)], 
-            hp: hp, maxHp: hp, 
-            atk: Math.floor((10 + Player.kills*2) * (1 + (Player.diff * 0.1)) * weatherMult) 
-        });
+    if(waveCount % 10 === 0) {
+        document.getElementById('stage').style.backgroundColor = "#400"; log("UMA PRESENÇA COLOSSAL ESMAGA O AR.");
+        const bData = Bosses[Math.min(Player.worldIdx, Bosses.length-1)]; 
+        const bHp = Math.floor(bData.hp * hpMult);
+        enemies[4] = { n: bData.n, i: bData.i, hp: bHp, maxHp: bHp, atk: Math.floor(bData.atk * atkMult), isBoss: true, status: {bleed:0, poison:0, stun:0}, pos: 4 };
+        selectedIdx = 4;
+    } else {
+        const w = Biomes[Player.worldIdx % Biomes.length]; document.getElementById('stage').style.backgroundColor = w.bg;
+        log(w.log);
+        
+        const count = Math.min(5, 1 + Math.floor(Player.kills / 10));
+        let availableCells = [0,1,2,3,4,5];
+        for(let i=0; i<count; i++) {
+            const rIdx = Math.floor(Math.random()*availableCells.length); const cell = availableCells.splice(rIdx, 1)[0];
+            const hp = Math.floor((70 + Player.kills*15) * hpMult);
+            enemies[cell] = { i: w.enemies[Math.floor(Math.random()*w.enemies.length)], hp: hp, maxHp: hp, atk: Math.floor((10 + Player.kills*2) * atkMult), isBoss: false, status: {bleed:0, poison:0, stun:0}, pos: cell };
+            selectedIdx = cell;
+        }
     }
-    selectedIdx = 0;
     updateUI();
 }
 
+function getActiveEnemies() { return enemies.filter(e => e !== null && e.hp > 0); }
+
+function startQTE(callback) {
+    const overlay = document.getElementById('qte-overlay');
+    const cursor = document.getElementById('qte-cursor');
+    const target = document.getElementById('qte-target');
+    
+    overlay.style.display = 'block';
+    overlay.style.borderColor = '#444';
+    
+    let pos = 0; let speed = 5 + (Player.diff * 0.3); let direction = 1; let qteActive = true;
+    
+    let targetStart = 100 + Math.random() * 50; 
+    let targetWidth = Math.max(30, 40 + (Player.luck / 2)); 
+    target.style.left = targetStart + 'px'; target.style.width = targetWidth + 'px';
+
+    function step() {
+        if(!qteActive) return;
+        pos += speed * direction;
+        if(pos > 240 || pos < 0) direction *= -1;
+        cursor.style.left = pos + 'px';
+        requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+
+    const clickHandler = () => {
+        if(!qteActive) return;
+        qteActive = false; document.removeEventListener('pointerdown', clickHandler);
+        let isCrit = pos >= targetStart && pos <= (targetStart + targetWidth);
+        overlay.style.borderColor = isCrit ? 'var(--mana)' : 'var(--hp)';
+        setTimeout(() => { overlay.style.display = 'none'; callback(isCrit); }, 300);
+    };
+    
+    setTimeout(() => { document.addEventListener('pointerdown', clickHandler); }, 100);
+}
+
+function animateUID20(finalValue) {
+    const d20 = document.getElementById('ui-d20');
+    d20.style.transform = 'rotate(360deg) scale(1.3)';
+    
+    let ticks = 0;
+    const interval = setInterval(() => { d20.innerText = Math.floor(Math.random()*20)+1; ticks++; if(ticks>5) clearInterval(interval); }, 50);
+    
+    setTimeout(() => {
+        d20.innerText = finalValue;
+        d20.style.transform = 'rotate(0deg) scale(1)';
+        d20.style.color = finalValue === 20 ? 'var(--mana)' : (finalValue === 1 ? 'var(--hp)' : 'var(--gold)');
+        d20.style.borderColor = d20.style.color;
+    }, 400);
+}
+
 async function playCard(card, event, cardIndex) {
-    if(Player.mana < card.c || isTurnEnding || enemies.length === 0) return;
-    Player.mana -= card.c;
+    if(Player.mana < card.c || isTurnEnding || getActiveEnemies().length === 0) return;
     
     if(card.type === 'curse') {
-        Player.hp -= card.d;
-        Player.curses.splice(cardIndex, 1);
-        popDmg(card.d, 'player');
-        updateUI();
-        if(Player.hp <= 0) triggerDeath();
-        return;
+        Player.mana -= card.c;
+        Player.hp -= card.d; if(card.n === "LOUCURA") Player.mana = Math.max(0, Player.mana - 2);
+        Player.curses.splice(cardIndex, 1); AudioEngine.playHit(); popDmg(card.d, 'player'); updateUI();
+        if(Player.hp <= 0) checkDeathMechanic(); return;
     }
 
     const cardEl = event.currentTarget;
-    const targets = card.a ? enemies : [enemies[selectedIdx]];
-    const targetEl = document.querySelectorAll('.enemy')[card.a ? Math.floor(enemies.length/2) : selectedIdx];
-    
-    if(targetEl) animateCard(cardEl, targetEl);
+    const targetEnemy = enemies[selectedIdx];
+    const targets = card.a ? getActiveEnemies() : (targetEnemy ? [targetEnemy] : []);
+    if(targets.length === 0) return;
 
-    let v = Math.floor(Math.random()*20)+1;
-    if(Math.random() < Player.crit && v < 15) v = Math.floor(Math.random()*6)+15;
-
-    const d20 = document.getElementById('d20-container');
-    d20.innerText = v; d20.classList.add('rolling');
-    setTimeout(() => d20.classList.remove('rolling'), 500);
-    
-    setTimeout(() => {
-        targets.forEach(e => {
-            if (!e) return;
-            let p = Math.floor((card.d + Player.atk) * (v === 20 ? 3 : v >= 10 ? 1.2 : 0.5));
-            e.hp -= p;
-            if(Player.vamp > 0) Player.hp = Math.min(Player.maxHp, Player.hp + Math.floor(p * Player.vamp));
-            popDmg(p, 'enemy');
-        });
+    // Dispara o QTE
+    startQTE((isCrit) => {
+        Player.mana -= card.c; // Só consome mana se concluiu a ação
         
-        updateUI();
-        if(Player.mana <= 0) setTimeout(manualEndTurn, 600);
-        setTimeout(checkDeaths, 400);
-    }, 250);
+        const targetEl = document.getElementById(`cell-${targets[0].pos}`);
+        if(targetEl) animateCard(cardEl, targetEl); AudioEngine.playMagic();
+
+        let v = isCrit ? 20 : Math.floor(Math.random()*20)+1;
+        if(!isCrit && Math.random() < Player.crit && v < 15) v = Math.floor(Math.random()*6)+15;
+        
+        animateUID20(v);
+
+        setTimeout(() => {
+            AudioEngine.playHit();
+            targets.forEach(e => {
+                const isBackRow = e.pos < 3;
+                const enemyDodge = isBackRow ? 25 : 5; 
+                const hitChance = 100 - Math.max(0, enemyDodge - Player.luck);
+                
+                if(Math.random() * 100 > hitChance && v !== 20) { popDmg("ESQUIVA", 'enemy'); return; }
+
+                let p = Math.floor((card.d + Player.atk) * (v === 20 ? 3 : v >= 10 ? 1.2 : 0.5));
+                if(e.isBoss) p = Math.floor(p * 0.8);
+                
+                if(card.effect === 'poison' && e.status.bleed > 0) { p += 40; popDmg("CHOQUE TÓXICO", 'enemy'); }
+                if(card.effect === 'stun' && e.status.stun > 0) { p += 60; popDmg("ESMAGAMENTO", 'enemy'); }
+
+                e.hp -= p;
+                if(card.effect === 'bleed') e.status.bleed += 2; if(card.effect === 'poison') e.status.poison += 1; if(card.effect === 'stun' && Math.random() < 0.3) e.status.stun = 1;
+                if(Player.vamp > 0) Player.hp = Math.min(Player.maxHp, Player.hp + Math.floor(p * Player.vamp));
+                popDmg(p, 'enemy');
+            });
+            
+            updateUI(); if(Player.mana <= 0) setTimeout(manualEndTurn, 800); setTimeout(checkDeaths, 600);
+        }, 400); // Espera a animação do D20 UI
+    });
+}
+
+function castSpell() {
+    if(Player.spellCd > 0 || isTurnEnding || getActiveEnemies().length === 0) return;
+    const spell = SpellsPool[Player.spellId]; Player.spellCd = spell.cdMax; AudioEngine.playMagic(); spell.cast(); updateUI(); setTimeout(checkDeaths, 600);
+}
+function usePotion() {
+    if(Player.potions > 0 && Player.hp < Player.maxHp && !isTurnEnding) { Player.potions--; Player.hp = Math.min(Player.maxHp, Player.hp + Math.floor(Player.maxHp * 0.3)); popDmg("CURA", 'player'); AudioEngine.playMagic(); updateUI(); }
 }
 
 function animateCard(cardEl, targetEl) {
-    const clone = cardEl.cloneNode(true);
-    const rect = cardEl.getBoundingClientRect();
-    const targetRect = targetEl.getBoundingClientRect();
-    
-    clone.classList.add('card-animating');
-    clone.style.left = rect.left + 'px';
-    clone.style.top = rect.top + 'px';
-    clone.style.margin = '0';
-    document.body.appendChild(clone);
-    cardEl.style.visibility = 'hidden';
-
+    const clone = cardEl.cloneNode(true); const rect = cardEl.getBoundingClientRect(); const targetRect = targetEl.getBoundingClientRect();
+    clone.classList.add('card-animating'); clone.style.left = rect.left + 'px'; clone.style.top = rect.top + 'px'; clone.style.margin = '0';
+    document.body.appendChild(clone); cardEl.style.visibility = 'hidden';
     requestAnimationFrame(() => {
-        const dx = targetRect.left - rect.left + (targetRect.width/2) - (rect.width/2);
-        const dy = targetRect.top - rect.top;
-        clone.style.transform = `translate(${dx}px, ${dy}px) scale(0.6) rotate(10deg)`;
-        clone.style.opacity = '0';
+        const dx = targetRect.left - rect.left + (targetRect.width/2) - (rect.width/2); const dy = targetRect.top - rect.top;
+        clone.style.transform = `translate(${dx}px, ${dy}px) scale(0.6) rotate(10deg)`; clone.style.opacity = '0';
     });
-    setTimeout(() => clone.remove(), 300);
+    setTimeout(() => clone.remove(), 250);
+}
+
+async function processStatus(entity, isPlayer) {
+    if(entity.status.bleed > 0) { let d = isPlayer ? 10 : 20 + Math.floor(Player.atk*0.2); entity.hp -= d; entity.status.bleed--; popDmg(d, isPlayer ? 'player' : 'enemy'); await new Promise(r=>setTimeout(r, 200)); }
+    if(entity.status.poison > 0) { let d = isPlayer ? 5 * entity.status.poison : 15 * entity.status.poison; entity.hp -= d; popDmg(d, isPlayer ? 'player' : 'enemy'); await new Promise(r=>setTimeout(r, 200)); }
 }
 
 async function enemyTurn() {
-    if(isTurnEnding || enemies.length === 0) return;
-    isTurnEnding = true;
-    document.getElementById('end-turn-btn').disabled = true;
+    if(isTurnEnding || getActiveEnemies().length === 0) return;
+    isTurnEnding = true; document.getElementById('end-turn-btn').disabled = true;
     
-    const units = document.querySelectorAll('.enemy');
-    for (let i = 0; i < enemies.length; i++) {
+    await processStatus(Player, true); if(Player.hp <= 0) { checkDeathMechanic(); return; }
+
+    for(let i=0; i<6; i++) {
+        let e = enemies[i];
+        if(e && !e.isBoss && Math.random() < 0.3) {
+            let adj = []; if(i > 2) adj.push(i-3); else adj.push(i+3); if(i%3 !== 0) adj.push(i-1); if((i+1)%3 !== 0) adj.push(i+1); 
+            let emptyAdj = adj.filter(idx => enemies[idx] === null);
+            if(emptyAdj.length > 0) { let targetCell = emptyAdj[Math.floor(Math.random()*emptyAdj.length)]; e.pos = targetCell; enemies[targetCell] = e; enemies[i] = null; }
+        }
+    }
+    updateUI(); await new Promise(r=>setTimeout(r, 300)); 
+
+    for (let i = 0; i < 6; i++) {
         const e = enemies[i];
-        if (e && units[i]) {
-            await new Promise(resolve => {
-                units[i].classList.add('enemy-atk-anim');
-                document.getElementById('stage').style.transform = "translate(5px, 5px)";
-                setTimeout(() => {
-                    Player.hp -= Math.floor(e.atk); 
-                    popDmg(Math.floor(e.atk), 'player'); 
-                    updateUI();
-                    document.getElementById('stage').style.transform = "none";
-                }, 150);
-                setTimeout(() => { units[i].classList.remove('enemy-atk-anim'); resolve(); }, 400);
-            });
+        if (e) {
+            await processStatus(e, false); if(e.hp <= 0) continue;
+            if(e.status.stun > 0) { e.status.stun--; log(`${e.n || 'Inimigo'} atordoado.`); await new Promise(r=>setTimeout(r, 300)); continue; }
+
+            const el = document.getElementById(`cell-${i}`).querySelector('.enemy');
+            if(el) {
+                await new Promise(resolve => {
+                    el.classList.add('enemy-atk-anim'); document.getElementById('stage').style.transform = e.isBoss ? "translate(10px, 15px)" : "translate(4px, 4px)";
+                    setTimeout(() => {
+                        AudioEngine.playHit();
+                        const playerDodge = Math.min(50, Player.luck / 2);
+                        if(Math.random()*100 < playerDodge) { popDmg("ESQUIVOU", 'player'); }
+                        else { Player.hp -= Math.floor(e.atk); popDmg(Math.floor(e.atk), 'player'); }
+                        if(Player.thorns) { e.hp -= Math.floor(e.atk * 0.3); popDmg(Math.floor(e.atk * 0.3), 'enemy'); }
+                        updateUI(); document.getElementById('stage').style.transform = "none";
+                    }, 200);
+                    setTimeout(() => { el.classList.remove('enemy-atk-anim'); resolve(); }, e.isBoss ? 800 : 400);
+                });
+            }
             if(Player.hp <= 0) break;
         }
     }
     
-    if(Player.hp <= 0) triggerDeath();
-    else {
-        Player.mana = Player.maxMana;
-        isTurnEnding = false; 
-        document.getElementById('end-turn-btn').disabled = false;
-        updateUI();
-    }
+    if(Player.hp <= 0) checkDeathMechanic();
+    else { Player.mana = Player.maxMana; if(Player.spellCd > 0) Player.spellCd--; isTurnEnding = false; document.getElementById('end-turn-btn').disabled = false; updateUI(); checkDeaths(); }
 }
 
-function checkDeaths() {
-    let killed = false;
-    enemies = enemies.filter((e, idx) => {
-        if(e.hp <= 0) { 
-            Player.souls += 2; 
-            Player.gold += 30 + Math.floor(Player.diff*2); 
-            Player.kills++; 
-            killed = true; 
-            if(selectedIdx === idx) selectedIdx = 0;
-            return false; 
+async function checkDeaths() {
+    let killedBoss = false;
+    for(let i=0; i<6; i++) {
+        let e = enemies[i];
+        if(e && e.hp <= 0) {
+            if(e.isBoss) killedBoss = true;
+            Player.souls += e.isBoss ? 30 : 4; Player.gold += e.isBoss ? 200 : 40 + Math.floor(Player.diff*3); Player.kills++; 
+            enemies[i] = null;
+            if(selectedIdx === i) { let alive = enemies.find(en => en !== null); selectedIdx = alive ? alive.pos : 0; }
         }
-        return true;
-    });
-
-    if(killed && enemies.length === 0) {
-        showPostBattleStory();
-    } else if(enemies.length === 0) {
-        spawnEnemies();
     }
-    updateUI();
+
+    if(killedBoss) {
+        updateUI(); await playCinematic(["A abominação tomba.", "A Agonia aumenta."], false);
+        Player.worldIdx++; Player.diff++; 
+        Player.isBloodRain = false; document.getElementById('weather-tint').style.opacity = '0';
+        showPostBattleStory();
+    } else if(getActiveEnemies().length === 0) {
+        showPostBattleStory();
+    } else { updateUI(); }
 }
 
 function manualEndTurn() { if(!isTurnEnding) enemyTurn(); }
 
-// --- EVENTOS E NARRATIVA ---
+// === EVENTOS PÓS BATALHA ===
 function showPostBattleStory() {
-    const modal = document.getElementById('story-modal');
-    modal.style.display = 'flex';
-    
-    const d20 = document.getElementById('story-d20');
-    d20.classList.add('rolling');
-    
+    const modal = document.getElementById('story-modal'); const d20 = document.getElementById('story-d20'); const textEl = document.getElementById('story-text'); const btnEl = document.getElementById('story-btn');
+    textEl.innerText = ""; btnEl.style.display = 'none'; modal.style.display = 'flex'; d20.classList.add('spin-normal');
+    let ticks = 0; const tickInt = setInterval(() => { AudioEngine.playD20Tick(); ticks++; if(ticks > 10) clearInterval(tickInt); }, 100);
     setTimeout(() => {
-        d20.classList.remove('rolling');
-        const roll = Math.floor(Math.random()*20)+1;
-        d20.innerText = roll;
-        
-        let txt = "";
-        if(roll === 1) txt = "Um fracasso sombrio. Você sobreviveu por mero acaso. Os ossos de seus inimigos zombam da sua técnica desajeitada.";
-        else if(roll < 10) txt = "A batalha foi árdua. Seu sangue mancha o solo, mas os monstros caíram primeiro. O cansaço pesa em seus ombros.";
-        else if(roll < 20) txt = "Golpes precisos e frios. A escuridão reconhece sua maestria. Você limpa sua arma com orgulho macabro.";
-        else txt = "Uma execução perfeita e gloriosa! Os deuses ancestrais observam com reverência. Você não tomou um único arranhão digno de nota.";
-        
-        document.getElementById('story-text').innerText = txt;
-    }, 500);
+        d20.classList.remove('spin-normal'); const roll = Math.floor(Math.random()*20)+1; d20.innerText = roll;
+        if(roll === 1) textEl.innerText = "Um massacre brutal. Você sobreviveu, mas sente sua alma esvair."; else if(roll < 10) textEl.innerText = "Batalha exaustiva. O sangue inimigo mancha suas vestes e a fadiga pesa."; else if(roll < 20) textEl.innerText = "Golpes precisos. A escuridão reconhece sua maestria macabra."; else textEl.innerText = "Execução perfeita! Nenhuma criatura foi páreo para sua fúria profana.";
+        btnEl.style.display = 'block';
+    }, 1000);
 }
 
 function closeStoryModal() {
     document.getElementById('story-modal').style.display = 'none';
-    
-    // 40% de chance de Evento Aleatório, senão vai para a Árvore ou Próxima Batalha
-    if(Math.random() < 0.4) triggerRandomEvent();
-    else if(waveCount % 2 === 0) openSoulTree();
-    else spawnEnemies();
+    openSoulTree(); // Sempre abre a arvore
 }
 
-const RandomEvents = [
-    {
-        title: "Taverna do Crânio Rachado",
-        desc: "Uma taverna imunda esculpida na rocha. O estalajadeiro lhe oferece suprimentos em troca de ouro reluzente.",
-        choices: [
-            { t: "Comprar Poção Tétrica (50 Ouro / +40 HP)", f: () => { if(Player.gold>=50){Player.gold-=50; Player.hp=Math.min(Player.maxHp, Player.hp+40); closeEvent();} } },
-            { t: "Afiador de Lâminas (100 Ouro / +15 Atk)", f: () => { if(Player.gold>=100){Player.gold-=100; Player.atk+=15; closeEvent();} } },
-            { t: "Partir em silêncio", f: () => closeEvent() }
-        ]
-    },
-    {
-        title: "Meretrizes do Abismo",
-        desc: "Figuras esguias e sedutoras emergem das sombras. Elas prometem aliviar suas dores e revigorar sua carne... por um preço.",
-        choices: [
-            { t: "Entregar-se aos prazeres (80 Ouro / Restaura 100% HP)", f: () => { if(Player.gold>=80){Player.gold-=80; Player.hp=Player.maxHp; closeEvent();} } },
-            { t: "Recusar a tentação", f: () => closeEvent() }
-        ]
-    },
-    {
-        title: "Emboscada Traiçoeira",
-        desc: "Um ruído na escuridão! Ladrões de túmulos tentam te cercar. Role os dados para decidir seu destino.",
-        choices: [
-            { t: "Reagir rapidamente (Rolar D20)", f: () => { 
-                const roll = Math.floor(Math.random()*20)+1;
-                if(roll < 10) { alert(`Você rolou ${roll}. Falha! Você perde 30 de Vigor na fuga.`); Player.hp -= 30; }
-                else { alert(`Você rolou ${roll}. Sucesso! Você os decepa e rouba 50 moedas.`); Player.gold += 50; }
-                if(Player.hp <= 0) triggerDeath(); else closeEvent();
-            }}
-        ]
-    },
-    {
-        title: "Mudança Climática: Chuva de Sangue",
-        desc: "As nuvens se fecham. Gotas espessas e vermelhas começam a cair. O cheiro de ferro domina o ar. A insanidade aumenta o poder das criaturas.",
-        choices: [
-            { t: "Aceitar o banho de sangue", f: () => { 
-                Player.isBloodRain = true; 
-                AudioEngine.playAmbient(true); // Altera o som
-                closeEvent(); 
-            }}
-        ]
+function closeSoulTree() {
+    document.getElementById('soul-modal').style.display = 'none';
+    
+    // Lógica de progressão da wave
+    if (waveCount % 5 === 0 && waveCount % 10 !== 0) {
+        openTown();
+    } else if (waveCount % 10 !== 0 && Math.random() < 0.3) {
+        triggerRandomEvent();
+    } else {
+        spawnEnemies();
     }
-];
+}
 
+// === EVENTOS ALEATÓRIOS ===
 function triggerRandomEvent() {
     const ev = RandomEvents[Math.floor(Math.random()*RandomEvents.length)];
-    document.getElementById('event-title').innerText = ev.title;
-    document.getElementById('event-desc').innerText = ev.desc;
-    
-    const container = document.getElementById('event-choices');
-    container.innerHTML = '';
-    
-    ev.choices.forEach(c => {
-        const btn = document.createElement('button');
-        btn.className = 'btn-action';
-        btn.innerText = c.t;
-        btn.onclick = c.f;
-        container.appendChild(btn);
-    });
-    
+    document.getElementById('event-title').innerText = ev.title; document.getElementById('event-desc').innerText = ev.desc;
+    const container = document.getElementById('event-choices'); container.innerHTML = '';
+    ev.choices.forEach(c => { const btn = document.createElement('button'); btn.className = 'btn-action'; btn.innerText = c.t; btn.onclick = c.f; container.appendChild(btn); });
     document.getElementById('event-modal').style.display = 'flex';
 }
+function closeEvent() { document.getElementById('event-modal').style.display = 'none'; spawnEnemies(); }
 
-function closeEvent() {
-    document.getElementById('event-modal').style.display = 'none';
-    spawnEnemies();
+// === MOEDA DA MORTE E FIM ===
+function checkDeathMechanic() {
+    if(!Player.usedCoin) {
+        document.getElementById('coin-modal').style.display = 'flex'; document.getElementById('coin-result').innerText = ''; document.getElementById('coin-btn').style.display = 'none'; document.getElementById('death-coin').style.pointerEvents = 'auto';
+    } else { handleDeath(); }
 }
 
+function flipDeathCoin() {
+    const coin = document.getElementById('death-coin'); coin.style.pointerEvents = 'none'; coin.classList.add('coin-flip'); AudioEngine.playMagic();
+    setTimeout(() => {
+        coin.classList.remove('coin-flip'); Player.usedCoin = true;
+        const surviveChance = 0.5 + (Player.luck / 200); 
+        if(Math.random() < surviveChance) {
+            coin.innerText = "❤️"; document.getElementById('coin-result').innerText = "A MORTE RECUSA SUA ALMA. VOCÊ VIVE."; 
+            
+            // CORREÇÃO DO BUG: Restaura mana e desativa bloqueio de turno
+            Player.hp = 1; Player.mana = Player.maxMana; isTurnEnding = false;
+            
+            document.getElementById('coin-btn').innerText = "Levantar-se"; 
+            document.getElementById('coin-btn').onclick = () => { document.getElementById('coin-modal').style.display = 'none'; updateUI(); };
+        } else {
+            coin.innerText = "💀"; document.getElementById('coin-result').innerText = "SEU TEMPO ACABOU.";
+            document.getElementById('coin-btn').innerText = "Aceitar"; document.getElementById('coin-btn').onclick = () => { document.getElementById('coin-modal').style.display = 'none'; handleDeath(); };
+        }
+        document.getElementById('coin-btn').style.display = 'block';
+    }, 2000);
+}
+
+async function handleDeath() {
+    AudioEngine.stop(); await playCinematic(["Sua luz se extinguiu."], true);
+    setTimeout(() => {
+        document.getElementById('cinematic-overlay').style.display = 'none';
+        rollGiantD20("O FIM DA JORNADA", "Role para descobrir o paradeiro da sua alma.", true, "spin-slow", (roll, textEl, btnEl) => {
+            if(roll === 1) textEl.innerText = "Trágico. Sua alma foi devorada pelo vácuo."; else if(roll < 10) textEl.innerText = "Seu corpo apodrecerá nas masmorras."; else if(roll < 20) textEl.innerText = "Sua lenda será sussurrada no submundo."; else textEl.innerText = "Ascensão Póstuma! Sua fúria ecoará pela eternidade.";
+            btnEl.innerText = "Aceitar o Destino"; btnEl.style.display = 'block'; btnEl.onclick = () => location.reload();
+        });
+    }, 2000);
+}
+
+function rollGiantD20(title, subtitle, isDeath, speedClass, callback) {
+    const modal = document.getElementById('giant-d20-modal'); document.getElementById('gd20-title').innerText = title; document.getElementById('gd20-subtitle').innerText = subtitle;
+    const d20 = document.getElementById('gd20-shape'); const resultText = document.getElementById('gd20-result'); const btn = document.getElementById('gd20-btn');
+    d20.className = `giant-d20 ${isDeath ? 'death-style' : ''}`; resultText.innerText = ''; btn.style.display = 'none'; modal.style.display = 'flex';
+    d20.onclick = () => {
+        d20.onclick = null; d20.classList.add(speedClass);
+        let ticks = 0; const tickInt = setInterval(() => { AudioEngine.playD20Tick(); ticks++; if(ticks > 10) clearInterval(tickInt); }, 100);
+        setTimeout(() => { const roll = Math.floor(Math.random()*20)+1; d20.innerText = roll; d20.classList.remove(speedClass); callback(roll, resultText, btn); }, speedClass === 'spin-slow' ? 3500 : 1000);
+    };
+}
+
+// === CIDADE ===
+function openTown() {
+    document.getElementById('town-modal').style.display = 'flex'; document.getElementById('town-actions').style.display = 'grid';
+    document.getElementById('magic-anim').style.display = 'none'; document.getElementById('slot-machine-ui').style.display = 'none'; document.getElementById('btn-leave-town').style.display = 'block'; updateUI();
+}
+function leaveTown() { document.getElementById('town-modal').style.display = 'none'; spawnEnemies(); }
+
+function townTavern() {
+    if(Player.gold >= 40) {
+        Player.gold -= 40; Player.hp = Player.maxHp; Player.curses = []; Player.status = {bleed:0, poison:0}; Player.usedCoin = false; Player.potions = Math.max(Player.potions, 1);
+        alert("O Vigor retorna. A moeda de Caronte foi recuperada."); updateUI();
+    } else alert("Falta ouro para o descanso.");
+}
+function townBlacksmith() {
+    if(Player.gold >= 80) {
+        Player.gold -= 80; Player.startWeapon.n = "Brutal " + Player.startWeapon.n; Player.startWeapon.d += 15; Player.startWeapon.effect = 'bleed';
+        alert(`Arma reforjada: ${Player.startWeapon.n} (+15 Dano e Sangramento)`); updateUI();
+    } else alert("Falta ouro para a forja.");
+}
+function townSpell() {
+    document.getElementById('town-actions').style.display = 'none'; document.getElementById('btn-leave-town').style.display = 'none';
+    document.getElementById('magic-anim').style.display = 'flex'; AudioEngine.playMagic();
+    setTimeout(() => {
+        document.getElementById('town-modal').style.display = 'none';
+        rollGiantD20("O RITUAL OCULTO", "O caos mágico define o resultado.", false, "spin-normal", (roll, textEl, btnEl) => {
+            if(roll === 1) { textEl.innerText = "Desastre! (-30 HP)"; Player.hp -= 30; } else if(roll < 10) { textEl.innerText = "Fumaça. Nada acontece."; }
+            else if(roll < 19) { textEl.innerText = "Conhecimento Arcano. (+1 Essência Máxima e Sorte)"; Player.maxMana += 1; Player.luck += 5; } else { textEl.innerText = "Ascensão Pura! (+2 Essência e Frasco)"; Player.maxMana += 2; Player.potions++; }
+            btnEl.innerText = "Aceitar Sorte"; btnEl.style.display = 'block';
+            btnEl.onclick = () => { document.getElementById('giant-d20-modal').style.display = 'none'; updateUI(); leaveTown(); if(Player.hp<=0) handleDeath(); };
+        });
+    }, 2000);
+}
+
+let pendingSlotItems = [];
+function showSlotMachine() { document.getElementById('town-actions').style.display = 'none'; document.getElementById('btn-leave-town').style.display = 'none'; document.getElementById('slot-machine-ui').style.display = 'flex'; }
+function spinSlots() {
+    if(Player.gold < 50) return alert("Sem ouro suficiente.");
+    Player.gold -= 50; updateUI(); const btn = document.getElementById('slot-spin-btn'); btn.disabled = true;
+    const wKeys = Object.keys(WeaponsPool);
+    const timer = setInterval(() => { document.getElementById('slot-1').innerText = WeaponsPool[wKeys[Math.floor(Math.random()*wKeys.length)]].i; document.getElementById('slot-2').innerText = RelicsPool[Math.floor(Math.random()*RelicsPool.length)].i; document.getElementById('slot-3').innerText = CursesPool[Math.floor(Math.random()*CursesPool.length)].i; }, 80);
+    setTimeout(() => {
+        clearInterval(timer); const w = WeaponsPool[wKeys[Math.floor(Math.random()*wKeys.length)]]; const r = RelicsPool[Math.floor(Math.random()*RelicsPool.length)]; const c = {...CursesPool[Math.floor(Math.random()*CursesPool.length)]};
+        document.getElementById('slot-1').innerText = w.i; document.getElementById('slot-2').innerText = r.i; document.getElementById('slot-3').innerText = c.i;
+        pendingSlotItems = [w, r, c]; btn.style.display = 'none'; document.getElementById('slot-close-btn').style.display = 'block';
+    }, 2000);
+}
+function endSlotInteraction() {
+    Player.equip.push(pendingSlotItems[0]); pendingSlotItems[1].f(); Player.relics.push(pendingSlotItems[1].i); Player.curses.push(pendingSlotItems[2]);
+    document.getElementById('slot-machine-ui').style.display = 'none'; document.getElementById('slot-spin-btn').style.display = 'block'; document.getElementById('slot-spin-btn').disabled = false; document.getElementById('slot-close-btn').style.display = 'none'; leaveTown();
+}
+
+// === ÁRVORE DE HABILIDADES ===
 function openSoulTree() {
     document.getElementById('soul-modal').style.display = 'flex';
-    const ui = document.getElementById('soul-ui'); ui.innerHTML = '';
-    
-    SkillTree.forEach((tier, tIdx) => {
-        const row = document.createElement('div');
-        row.className = 'tree-tier';
-        tier.forEach(s => {
+    renderSoulTree();
+}
+function renderSoulTree() {
+    const ui = document.getElementById('soul-tree-ui'); ui.innerHTML = '';
+    SkillTree.forEach(branch => {
+        const branchDiv = document.createElement('div'); branchDiv.className = 'tree-branch';
+        branchDiv.innerHTML = `<h3>${branch.title}</h3>`;
+        branch.nodes.forEach(node => {
+            const isUnlocked = node.req === null || branch.nodes.find(n => n.id === node.req).bought;
             const div = document.createElement('div');
-            div.className = `node`;
-            div.innerHTML = `<b>${s.n}</b><br><small style="color:var(--gold)">${s.d}</small><br><span style="color:var(--soul)">${s.c} Almas</span>`;
-            if(Player.souls >= s.c) {
-                div.onclick = () => { 
-                    Player.souls -= s.c; s.f(); 
-                    div.classList.add('bought');
-                    setTimeout(() => openSoulTree(), 200);
-                    updateUI(); 
-                };
-            } else { div.style.opacity = "0.4"; div.style.cursor = "not-allowed"; }
-            row.appendChild(div);
+            div.className = `node ${node.bought ? 'bought' : ''} ${!isUnlocked ? 'locked' : ''}`;
+            div.innerHTML = `<b>${node.n}</b><br><small style="color:var(--gold)">${node.d}</small><br><span style="color:var(--soul)">${node.c} Almas</span>`;
+            if(isUnlocked && !node.bought) {
+                div.onclick = () => { if(Player.souls >= node.c) { Player.souls -= node.c; node.f(); node.bought = true; renderSoulTree(); updateUI(); } };
+            }
+            branchDiv.appendChild(div);
         });
-        ui.appendChild(row);
+        ui.appendChild(branchDiv);
     });
 }
-function closeModal(id) { document.getElementById(id).style.display='none'; if(enemies.length === 0) spawnEnemies(); updateUI(); }
 
-// --- TELA DE MORTE ---
-function triggerDeath() {
-    AudioEngine.stop();
-    document.getElementById('death-modal').style.display = 'flex';
-}
-
-function rollDeathD20() {
-    const d20 = document.getElementById('death-d20');
-    d20.classList.add('slow-spin');
-    d20.onclick = null; // desabilita clique duplo
-    
-    setTimeout(() => {
-        const roll = Math.floor(Math.random()*20)+1;
-        d20.innerText = roll;
-        d20.classList.remove('slow-spin');
-        
-        let txt = "";
-        if(roll === 1) txt = "Trágico. Sua alma foi devorada pelo vácuo. Você sequer será lembrado.";
-        else if(roll < 10) txt = "Seu corpo apodrecerá nas masmorras, servindo de banquete para as feras.";
-        else if(roll < 20) txt = "Você lutou bravamente. Sua lenda será sussurrada nas tavernas do submundo.";
-        else txt = "Ascensão Póstuma! Sua fúria ecoará pela eternidade. Os demônios temem o dia do seu retorno.";
-        
-        document.getElementById('death-result').innerText = txt;
-        document.getElementById('death-btn').style.display = 'block';
-    }, 3000);
-}
-
-// --- INTERFACE ---
+// === UI UPDATE ===
 function updateUI() {
-    document.getElementById('st-name').innerText = `${Player.name}`;
-    document.getElementById('st-gold').innerText = Player.gold;
-    document.getElementById('st-souls').innerText = Player.souls;
-    document.getElementById('st-atk').innerText = `+${Player.atk}`;
-    document.getElementById('st-crit').innerText = `${Math.floor(Player.crit*100)}%`;
-    document.getElementById('st-diff').innerText = `Nível ${Player.diff}`;
+    document.getElementById('st-name').innerText = `${Player.name}`; document.getElementById('st-gold').innerText = Player.gold;
+    document.getElementById('st-souls').innerText = Player.souls; document.getElementById('st-atk').innerText = `+${Player.atk}`;
+    document.getElementById('st-crit').innerText = `${Math.floor(Player.crit*100)}%`; document.getElementById('st-diff').innerText = `Nível ${Player.diff}`;
+    document.getElementById('st-luck').innerText = Player.luck;
     
-    const rCont = document.getElementById('relics-container');
-    rCont.innerHTML = Player.relics.length > 0 ? Player.relics.map(i => `<span class="relic-icon">${i}</span>`).join('') : '<small style="color:#555">Nenhuma</small>';
+    const rCont = document.getElementById('relics-container'); rCont.innerHTML = Player.relics.length > 0 ? Player.relics.map(i => `<span class="relic-icon">${i}</span>`).join('') : '<small style="color:#555">Nenhuma</small>';
 
-    document.getElementById('hp-fill').style.height = (Player.hp/Player.maxHp)*100 + "%";
-    document.getElementById('mana-fill').style.height = (Player.mana/Player.maxMana)*100 + "%";
-    document.getElementById('hp-text').innerText = `${Math.max(0,Math.floor(Player.hp))}/${Player.maxHp}`;
-    document.getElementById('mana-text').innerText = `${Player.mana}/${Player.maxMana}`;
-    
+    document.getElementById('hp-fill').style.height = (Player.hp/Player.maxHp)*100 + "%"; document.getElementById('mana-fill').style.height = (Player.mana/Player.maxMana)*100 + "%";
+    document.getElementById('hp-text').innerText = `${Math.max(0,Math.floor(Player.hp))}/${Player.maxHp}`; document.getElementById('mana-text').innerText = `${Player.mana}/${Player.maxMana}`;
     document.getElementById('end-turn-btn').classList.toggle('stall-warning', Player.mana <= 0);
 
-    const view = document.getElementById('main-view');
-    view.className = '';
-    if(Player.curses.length > 0) view.classList.add('weather-blood'); // Reaproveitando visual vermelho para maldições
-    if(Player.isBloodRain) view.classList.add('weather-blood');
+    const sBtn = document.getElementById('spell-btn'); const sIcon = document.getElementById('spell-icon-ui'); const sCd = document.getElementById('spell-cd-ui');
+    sIcon.innerText = SpellsPool[Player.spellId].i;
+    if(Player.spellCd > 0) { sBtn.disabled = true; sCd.innerText = `${Player.spellCd} Turnos`; sCd.style.color = "#888"; } else { sBtn.disabled = false; sCd.innerText = "Pronto"; sCd.style.color = "var(--gold)"; }
+    const pBtn = document.getElementById('potion-btn'); document.getElementById('potion-count').innerText = `${Player.potions} Frasco(s)`; pBtn.disabled = Player.potions <= 0;
 
     renderEnemies(); renderHand();
 }
 
 function renderEnemies() {
-    const row = document.getElementById('enemy-row'); row.innerHTML = '';
-    if(selectedIdx >= enemies.length) selectedIdx = 0;
-
-    enemies.forEach((e, i) => {
-        const div = document.createElement('div');
-        div.className = `enemy ${i === selectedIdx ? 'selected' : ''}`;
-        div.onclick = () => { if(!isTurnEnding) { selectedIdx = i; renderEnemies(); } };
-        div.innerHTML = `<div class="enemy-sprite">${e.i}</div><div class="enemy-hp-bar"><div class="enemy-hp-fill" style="width:${(e.hp/e.maxHp)*100}%"></div></div>`;
-        row.appendChild(div);
-    });
+    for(let i=0; i<6; i++) {
+        const cell = document.getElementById(`cell-${i}`); cell.innerHTML = '';
+        const e = enemies[i];
+        if(e) {
+            const div = document.createElement('div'); div.className = `enemy ${i === selectedIdx ? 'selected' : ''} ${e.isBoss ? 'boss' : ''}`;
+            div.onclick = () => { if(!isTurnEnding) { selectedIdx = i; renderEnemies(); } };
+            let statusHtml = `<div class="status-container">`;
+            if(e.status.bleed > 0) statusHtml += `<div class="status-icon status-bleed">${e.status.bleed}</div>`;
+            if(e.status.poison > 0) statusHtml += `<div class="status-icon status-poison">${e.status.poison}</div>`;
+            if(e.status.stun > 0) statusHtml += `<div class="status-icon status-stun">!</div>`; statusHtml += `</div>`;
+            div.innerHTML = `${e.isBoss ? `<div class="boss-tag">${e.n}</div>` : ''}${statusHtml}<div class="enemy-sprite">${e.i}</div><div class="enemy-hp-bar"><div class="enemy-hp-fill" style="width:${(e.hp/e.maxHp)*100}%"></div></div>`;
+            cell.appendChild(div);
+        }
+    }
 }
 
 function renderHand() {
     const hand = document.getElementById('hand'); hand.innerHTML = '';
-    let currentHand = [Player.startWeapon];
-    Player.equip.forEach(w => currentHand.push(w));
-    
-    const wKeys = Object.keys(WeaponsPool);
-    while(currentHand.length < 4) currentHand.push(WeaponsPool[wKeys[Math.floor(Math.random()*wKeys.length)]]);
+    let currentHand = [Player.startWeapon]; Player.equip.forEach(w => currentHand.push(w));
+    const wKeys = Object.keys(WeaponsPool); while(currentHand.length < 4) currentHand.push(WeaponsPool[wKeys[Math.floor(Math.random()*wKeys.length)]]);
     Player.curses.forEach(c => currentHand.unshift(c));
 
     currentHand.slice(0, 6).forEach((card, idx) => {
-        const div = document.createElement('div');
-        const isCurse = card.type === 'curse';
-        const canPlay = (Player.mana >= card.c && !isTurnEnding) || isCurse;
+        const isCurse = card.type === 'curse'; const canPlay = (Player.mana >= card.c && !isTurnEnding) || isCurse;
+        const div = document.createElement('div'); div.className = `card ${canPlay ? 'active' : 'no-mana'} ${isCurse ? 'curse' : ''}`;
         
-        div.className = `card ${canPlay ? 'active' : 'no-mana'} ${isCurse ? 'curse' : ''}`;
-        div.innerHTML = `
-            <div class="card-cost">${card.c}</div>
-            <div style="font-size:30px; margin:2px 0">${card.i}</div>
-            <b style="color:${isCurse ? '#ff4444' : '#fff'}">${card.n}</b>
-            <span style="color:#aaa; font-size:9px;">${isCurse ? card.desc : 'Dano: ' + (card.d+Player.atk)}</span>
-        `;
-        if(canPlay) div.onclick = (e) => playCard(card, e, idx);
-        hand.appendChild(div);
+        // Estilo de Rotação Hover aleatório estilo Balatro
+        div.style.setProperty('--r-tilt', Math.random());
+
+        div.innerHTML = `<div class="card-cost">${card.c}</div><div style="font-size:28px; margin:2px 0">${card.i}</div><b style="color:${isCurse ? '#ff4444' : '#fff'}; letter-spacing:1px;">${card.n}</b><span style="color:#aaa; font-size:9px;">${isCurse ? card.desc : 'Dano: ' + (card.d+Player.atk)}</span>`;
+        if(canPlay) div.onclick = (e) => playCard(card, e, idx); hand.appendChild(div);
     });
 }
 
 function log(m) { document.getElementById('narrative-log').innerText = m; }
 function popDmg(val, type) {
-    const t = document.createElement('div'); t.className = 'dmg-txt'; t.innerText = `-${val}`;
-    t.style.left = Math.random()*40+30+"%"; t.style.top = type==='enemy'?'30%':'60%';
-    t.style.color = type==='enemy'?'#d4af37':'#f00'; document.body.appendChild(t);
-    setTimeout(() => t.remove(), 1000);
+    const t = document.createElement('div'); t.className = 'dmg-txt'; t.innerText = typeof val === 'string' ? val : (val > 0 ? `-${val}` : 'BLOCKED');
+    t.style.left = Math.random()*40+30+"%"; t.style.top = type==='enemy'?'25%':'55%'; t.style.color = type==='enemy'?'#d4af37':'#f00';
+    document.body.appendChild(t); setTimeout(() => t.remove(), 1000);
 }
 </script>
 </body>
