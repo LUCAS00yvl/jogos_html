@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doce Kombat: Definitive Edition</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="selection-screen">
+        <h1 id="select-title">P1: ESCOLHA SEU DOCE</h1>
+        <div class="char-grid" id="char-grid">
+            </div>
+    </div>
+
+    <div id="game-container" style="display: none;">
+        <div class="ui-layer">
+            <div id="p1-wrapper" class="health-bar-wrapper">
+                <span class="player-name" id="p1-name">P1</span>
+                <div class="health-bar-bg"><div class="health-bar" id="p1-health"></div></div>
+                <div id="p1-combo" class="combo-text"></div>
+            </div>
+
+            <div class="timer" id="timer">60</div>
+
+            <div id="p2-wrapper" class="health-bar-wrapper">
+                <span class="player-name" id="p2-name">P2</span>
+                <div class="health-bar-bg health-bar-p2"><div class="health-bar" id="p2-health"></div></div>
+                <div id="p2-combo" class="combo-text"></div>
+            </div>
+        </div>
+
+        <div id="game-over">
+            <span id="winner-text"></span>
+            <button onclick="location.reload()">Revanche</button>
+        </div>
+        
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div class="controls-panel" id="controls" style="display: none;">
+        <div>
+            <h3>P1 (Esquerda)</h3>
+            <p>Mover: <b>W, A, S, D</b><br>Soco: <b>F</b> | Chute: <b>G</b></p>
+        </div>
+        <div>
+            <h3>P2 (Direita)</h3>
+            <p>Mover: <b>Setas</b><br>Soco: <b>O</b> | Chute: <b>P</b></p>
+        </div>
+    </div>
+
+    <script src="classes.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

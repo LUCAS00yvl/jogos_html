@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RogueVania Mobile</title>
+    <style>
+        /* CSS INTEGRADO */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            touch-action: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            background-color: #2c3e50;
+            display: block;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* CONTROLES MOBILE */
+        #mobile-controls {
+            position: absolute;
+            bottom: env(safe-area-inset-bottom, 20px);
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 40px 20px 40px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        #mobile-controls * {
+            pointer-events: auto;
+            user-select: none;
+        }
+
+        /* JOYSTICK */
+        #joystick-base {
+            width: 130px;
+            height: 130px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #joystick-knob {
+            width: 55px;
+            height: 55px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            position: absolute;
+            transition: transform 0.05s linear;
+        }
+
+        /* BOTÕES */
+        #action-buttons {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 20px;
+        }
+
+        .bottom-row {
+            display: flex;
+            gap: 20px;
+        }
+
+        .mobile-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: none;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            border-radius: 50%;
+            box-shadow: 0 6px rgba(0,0,0,0.4);
+            text-transform: uppercase;
+        }
+
+        .mobile-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px rgba(0,0,0,0.4);
+        }
+
+        #btn-jump { background: #2ecc71; width: 80px; height: 80px; }
+        #btn-attack { background: #e74c3c; width: 100px; height: 100px; font-size: 18px; }
+        #btn-dodge { background: #3498db; width: 80px; height: 80px; }
+
+        /* TELAS DE OVERLAY */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 100;
+            text-align: center;
+        }
+
+        #upgradeOptions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .upgrade-card {
+            background: #34495e;
+            padding: 20px;
+            border-radius: 12px;
+            width: 140px;
+            border: 2px solid #7f8c8d;
+        }
+
+        #restartButton {
+            padding: 15px 40px;
+            font-size: 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="mobile-controls">
+            <div id="joystick-base">
+                <div id="joystick-knob"></div>
+            </div>
+            
+            <div id="action-buttons">
+                <button id="btn-jump" class="mobile-btn">Pulo</button>
+                <div class="bottom-row">
+                    <button id="btn-attack" class="mobile-btn">Atacar</button>
+                    <button id="btn-dodge" class="mobile-btn">Esquiva</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="gameOverScreen" class="overlay" style="display: none;">
+            <h1>MORTE</h1>
+            <p>Você foi derrotado.</p>
+            <button id="restartButton">Recomeçar</button>
+        </div>
+
+        <div id="upgradeScreen" class="overlay" style="display: none;">
+            <h2>ONDA CONCLUÍDA</h2>
+            <p>Escolha uma melhoria:</p>
+            <div id="upgradeOptions"></div>
+        </div>
+    </div>
+
+    <script>
+        // JS INTEGRADO
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 1024;
+        canvas.height = 576;
+
+        const gravity = 0.6;
+        let gameState = 'STARTING'; 
+        let enemies = [];
+        let player;
+
+        // --- CLASSES ---
+
+        class Weapon {
+            constructor(player) {
+                this.player = player;
+                this.height = 14;
+                this.range = 75; // Alcance visual e de dano
+                this.damage = 25;
+                this.attackAngle = 0;
+                this.isAttacking = false;
+                this.canAttack = true;
+                this.cooldown = 400;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.player.x + this.player.w/2, this.player.y + this.player.h/2);
+                if (this.player.dir === -1) ctx.scale(-1, 1);
+                ctx.rotate(this.attackAngle);
+                
+                ctx.fillStyle = '#f1c40f';
+                // A arma estica visualmente conforme o range aumenta
+                ctx.fillRect(0, -this.height/2, this.range, this.height);
+                ctx.restore();
+            }
+
+            attack() {
+                if (!this.canAttack) return;
+                this.canAttack = false;
+                this.isAttacking = true;
+
+                const start = -Math.PI/4;
+                const end = Math.PI/4;
+                const duration = 150;
+                const startTime = Date.now();
+
+                const animate = () => {
+                    const now = Date.now();
+                    const t = Math.min(1, (now - startTime) / duration);
+                    this.attackAngle = start + (end - start) * t;
+                    if (t < 1) requestAnimationFrame(animate);
+                    else {
+                        this.isAttacking = false;
+                        this.attackAngle = 0;
+                    }
+                };
+                animate();
+
+                // Dano Radial
+                enemies.forEach(e => {
+                    const dx = (e.x + e.w/2) - (this.player.x + this.player.w/2);
+                    const dy = (e.y + e.h/2) - (this.player.y + this.player.h/2);
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < this.range + e.w/2) e.hp -= this.damage;
+                });
+
+                setTimeout(() => this.canAttack = true, this.cooldown);
+            }
+        }
+
+        class Player {
+            constructor() {
+                this.x = canvas.width/2;
+                this.y = 400;
+                this.w = 40;
+                this.h = 60;
+                this.vx = 0;
+                this.vy = 0;
+                this.dir = 1;
+                this.hp = 100;
+                this.maxHp = 100;
+                this.speed = 7;
+                this.jumps = 2;
+                this.invincible = false;
+                this.weapon = new Weapon(this);
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.y + this.h < canvas.height) this.vy += gravity;
+                else {
+                    this.vy = 0;
+                    this.y = canvas.height - this.h;
+                    this.jumps = 2;
+                }
+
+                if (this.x < 0) this.x = 0;
+                if (this.x + this.w > canvas.width) this.x = canvas.width - this.w;
+
+                this.weapon.draw();
+                ctx.fillStyle = this.invincible ? '#ecf0f1' : '#3498db';
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+            }
+
+            jump() {
+                if (this.jumps > 0) {
+                    this.vy = -15;
+                    this.jumps--;
+                }
+            }
+
+            dodge() {
+                if (this.invincible) return;
+                this.invincible = true;
+                const oldVx = this.vx;
+                this.vx = 25 * this.dir;
+                setTimeout(() => {
+                    this.invincible = false;
+                    this.vx = 0;
+                }, 250);
+            }
+        }
+
+        class Enemy {
+            constructor(x, hp) {
+                this.x = x;
+                this.y = 0;
+                this.w = 50;
+                this.h = 50;
+                this.hp = hp;
+                this.speed = 2 + Math.random() * 2;
+            }
+            update() {
+                const dx = player.x - this.x;
+                this.x += (dx > 0 ? 1 : -1) * this.speed;
+                if (this.y + this.h < canvas.height) this.y += gravity * 2;
+                else this.y = canvas.height - this.h;
+
+                ctx.fillStyle = '#c0392b';
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+
+                if (Math.abs(dx) < 30 && !player.invincible) player.hp -= 0.5;
+            }
+        }
+
+        // --- GAME ENGINE ---
+
+        let wave = 0;
+        const upgradePool = [
+            { t: "Vida+", d: "+25 HP Máx", f: p => { p.maxHp += 25; p.hp += 25; } },
+            { t: "Dano+", d: "+15 Dano", f: p => p.weapon.damage += 15 },
+            { t: "Alcance+", d: "Lâmina Longa", f: p => p.weapon.range += 25 },
+            { t: "Veloc+", d: "+Movimento", f: p => p.speed += 2 }
+        ];
+
+        function startWave() {
+            wave++;
+            gameState = 'WAVE';
+            for(let i=0; i < 2 + wave*2; i++) {
+                enemies.push(new Enemy(Math.random() < 0.5 ? -50 : canvas.width + 50, 40 + wave*10));
+            }
+        }
+
+        function showUpgrades() {
+            gameState = 'UPGRADE';
+            const div = document.getElementById('upgradeOptions');
+            const screen = document.getElementById('upgradeScreen');
+            div.innerHTML = '';
+            screen.style.display = 'flex';
+
+            [...upgradePool].sort(() => 0.5 - Math.random()).slice(0, 3).forEach(up => {
+                const card = document.createElement('div');
+                card.className = 'upgrade-card';
+                card.innerHTML = `<strong>${up.t}</strong><br><small>${up.d}</small>`;
+                card.onclick = () => {
+                    up.f(player);
+                    screen.style.display = 'none';
+                    startWave();
+                };
+                div.appendChild(card);
+            });
+        }
+
+        function init() {
+            player = new Player();
+            enemies = [];
+            wave = 0;
+            document.getElementById('gameOverScreen').style.display = 'none';
+            startWave();
+        }
+
+        function loop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (gameState === 'WAVE') {
+                player.update();
+                enemies = enemies.filter(e => e.hp > 0);
+                enemies.forEach(e => e.update());
+
+                if (enemies.length === 0) showUpgrades();
+                if (player.hp <= 0) {
+                    gameState = 'OVER';
+                    document.getElementById('gameOverScreen').style.display = 'flex';
+                }
+            } else {
+                player.update();
+                enemies.forEach(e => e.update());
+            }
+
+            // HUD
+            ctx.fillStyle = '#2c3e50'; ctx.fillRect(20, 20, 200, 15);
+            ctx.fillStyle = '#2ecc71'; ctx.fillRect(20, 20, (player.hp / player.maxHp) * 200, 15);
+            ctx.fillStyle = 'white'; ctx.fillText(`ONDA: ${wave}`, 20, 50);
+
+            requestAnimationFrame(loop);
+        }
+
+        // --- CONTROLES (TOQUE + TECLADO + MOUSE) ---
+
+        const keys = {};
+        window.onkeydown = e => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key === 'w') player.jump();
+            if (e.key === 'j') player.weapon.attack();
+            if (e.key === 'k') player.dodge();
+        };
+        window.onkeyup = e => keys[e.key.toLowerCase()] = false;
+
+        // Joystick Logic
+        const jBase = document.getElementById('joystick-base');
+        const jKnob = document.getElementById('joystick-knob');
+        jBase.ontouchmove = e => {
+            const touch = e.touches[0];
+            const rect = jBase.getBoundingClientRect();
+            const centerX = rect.left + rect.width/2;
+            const dist = touch.clientX - centerX;
+            const norm = Math.max(-1, Math.min(1, dist / 50));
+            jKnob.style.transform = `translateX(${norm * 30}px)`;
+            if (norm > 0.2) { player.vx = player.speed; player.dir = 1; }
+            else if (norm < -0.2) { player.vx = -player.speed; player.dir = -1; }
+            else player.vx = 0;
+        };
+        jBase.ontouchend = () => {
+            jKnob.style.transform = `translateX(0)`;
+            player.vx = 0;
+        };
+
+        // Botões Mobile
+        document.getElementById('btn-jump').ontouchstart = e => { e.preventDefault(); player.jump(); };
+        document.getElementById('btn-attack').ontouchstart = e => { e.preventDefault(); player.weapon.attack(); };
+        document.getElementById('btn-dodge').ontouchstart = e => { e.preventDefault(); player.dodge(); };
+        
+        // Mouse (PC fallback)
+        canvas.onmousedown = e => {
+            if (e.button === 0) player.weapon.attack();
+            if (e.button === 2) player.dodge();
+        };
+        canvas.oncontextmenu = e => e.preventDefault();
+
+        document.getElementById('restartButton').onclick = init;
+
+        // Keyboard Update Loop
+        setInterval(() => {
+            if (gameState !== 'WAVE') return;
+            if (!player.invincible) {
+                if (keys['d']) { player.vx = player.speed; player.dir = 1; }
+                else if (keys['a']) { player.vx = -player.speed; player.dir = -1; }
+                else if (!jBase.ontouchmove) player.vx = 0; 
+            }
+        }, 1000/60);
+
+        // Resize Canvas
+        function resize() {
+            const scale = Math.min(window.innerWidth / 1024, window.innerHeight / 576);
+            canvas.style.width = (1024 * scale) + 'px';
+            canvas.style.height = (576 * scale) + 'px';
+        }
+        window.onresize = resize;
+        
+        resize();
+        init();
+        loop();
+
+    </script>
+</body>
+</html>

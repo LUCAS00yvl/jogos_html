@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Balatro Unbound - High Stakes</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        body { margin: 0; background: #020202; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        canvas { border-radius: 12px; border: 1px solid #333; }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <script>
+        class PokerEngine {
+            static getRankLabel(rank) {
+                return { 11: 'J', 12: 'Q', 13: 'K', 14: 'A' }[rank] || rank.toString();
+            }
+
+            static evaluate(selectedCards) {
+                if (selectedCards.length === 0) return { name: "Nenhuma", mult: 0, chip: 0 };
+                
+                // ORDENAÇÃO E PREPARAÇÃO
+                const cards = [...selectedCards].sort((a, b) => a.rank - b.rank);
+                const ranks = cards.map(c => c.rank);
+                const suits = cards.map(c => c.suit);
+                const counts = {}; ranks.forEach(x => counts[x] = (counts[x] || 0) + 1);
+                const valCounts = Object.values(counts).sort((a, b) => b - a);
+                const uniqueRanks = [...new Set(ranks)];
+
+                // Flags de Combinação
+                const isFlush = new Set(suits).size === 1 && cards.length === 5;
+                let isStraight = false;
+                if (uniqueRanks.length === 5) {
+                    isStraight = (ranks[4] - ranks[0] === 4);
+                    if (!isStraight && ranks[4] === 14 && ranks[0] === 2 && ranks[3] === 5) isStraight = true;
+                }
+
+                // HIERARQUIA DE MÃOS (Da mais alta para a mais baixa)
+                // Se for um Flush, ele não vai cair no Par, porque o Flush é checado primeiro.
+                if (isFlush && isStraight) return { name: "Straight Flush", mult: 12, chip: 150 };
+                if (valCounts[0] === 4) return { name: "Quadra", mult: 10, chip: 100 };
+                if (valCounts[0] === 3 && valCounts[1] === 2) return { name: "Full House", mult: 7, chip: 70 };
+                if (isFlush) return { name: "Flush", mult: 5, chip: 50 };
+                if (isStraight) return { name: "Sequência", mult: 4, chip: 40 };
+                if (valCounts[0] === 3) return { name: "Trio", mult: 3, chip: 30 };
+                if (valCounts[0] === 2 && valCounts[1] === 2) return { name: "Dois Pares", mult: 2, chip: 20 };
+                if (valCounts[0] === 2) return { name: "Par", mult: 2, chip: 10 };
+                
+                return { name: "Carta Alta", mult: 1, chip: 5 };
+            }
+        }
+
+        class GameScene extends Phaser.Scene {
+            constructor() { super('GameScene'); }
+
+            init(data) {
+                this.score = 0;
+                this.money = data.money || 0;
+                this.currentBlind = data.currentBlind || 300;
+                this.inventory = data.inventory || [];
+                this.handsLeft = 4;
+                this.discardsLeft = 3;
+                this.hand = [];
+                this.selectedCards = [];
+            }
+
+            create() {
+                const { width, height } = this.scale;
+                
+                // Background
+                const bg = this.add.graphics();
+                bg.fillGradientStyle(0x0a1a0a, 0x0a1a0a, 0x000000, 0x000000, 1);
+                bg.fillRect(0, 0, width, height);
+
+                // UI Text
+                this.scoreText = this.add.text(width/2, 70, `META: ${this.currentBlind}`, { fontSize: '32px', color: '#00ff44', fontStyle: 'bold' }).setOrigin(0.5);
+                this.currentScoreText = this.add.text(width/2, 110, `0`, { fontSize: '48px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+                
+                this.statsText = this.add.text(width/2, height - 140, `MÃOS: ${this.handsLeft}  |  LIXO: ${this.discardsLeft}`, { fontSize: '16px', color: '#888' }).setOrigin(0.5);
+
+                this.spawnHand();
+
+                // Botões
+                this.createButton(width/2 - 85, height - 70, "JOGAR", 0x27ae60, () => this.playHand());
+                this.createButton(width/2 + 85, height - 70, "LIXO", 0xc0392b, () => this.discardHand());
+            }
+
+            createButton(x, y, label, color, callback) {
+                const container = this.add.container(x, y);
+                const bg = this.add.rectangle(0, 0, 140, 60, color).setInteractive({ useHandCursor: true });
+                const txt = this.add.text(0, 0, label, { fontSize: '20px', fontStyle: 'bold' }).setOrigin(0.5);
+                container.add([bg, txt]);
+                bg.on('pointerdown', callback);
+            }
+
+            spawnHand() {
+                const suits = ['♥', '♦', '♣', '♠'];
+                const colors = {'♥': '#ff4d4d', '♦': '#ff4d4d', '♣': '#ffffff', '♠': '#ffffff'};
+                
+                while (this.hand.length < 8) {
+                    const rank = Phaser.Math.Between(2, 14);
+                    const suit = Phaser.Utils.Array.GetRandom(suits);
+                    const cardCont = this.add.container(0, 420);
+                    
+                    const cardBg = this.add.rectangle(0, 0, 40, 70, 0x1e272e).setStrokeStyle(2, 0x485460);
+                    const label = PokerEngine.getRankLabel(rank);
+                    const cardTxt = this.add.text(0, 0, `${label}\n${suit}`, { 
+                        color: colors[suit], fontSize: '20px', align: 'center', fontStyle: 'bold' 
+                    }).setOrigin(0.5);
+                    
+                    cardCont.add([cardBg, cardTxt]);
+                    cardCont.setInteractive(new Phaser.Geom.Rectangle(-20, -35, 40, 70), Phaser.Geom.Rectangle.Contains);
+                    
+                    const cardData = { rank, suit, sprite: cardCont, selected: false };
+                    cardCont.on('pointerdown', () => this.toggleCard(cardData));
+                    this.hand.push(cardData);
+                }
+                this.sortAndArrange();
+            }
+
+            sortAndArrange() {
+                this.hand.sort((a, b) => a.rank - b.rank);
+                this.hand.forEach((card, i) => {
+                    this.tweens.add({
+                        targets: card.sprite,
+                        x: 35 + (i * 41),
+                        duration: 300,
+                        ease: 'Back.easeOut'
+                    });
+                });
+            }
+
+            toggleCard(card) {
+                if (!card.selected && this.selectedCards.length < 5) {
+                    card.sprite.y -= 40;
+                    card.selected = true;
+                    this.selectedCards.push(card);
+                } else if (card.selected) {
+                    card.sprite.y += 40;
+                    card.selected = false;
+                    this.selectedCards = this.selectedCards.filter(c => c !== card);
+                }
+            }
+
+            playHand() {
+                if (this.selectedCards.length === 0) return;
+
+                const result = PokerEngine.evaluate(this.selectedCards);
+                let mult = result.mult, chips = result.chip;
+
+                // Aplicar Modificadores (Jokers)
+                this.inventory.forEach(j => { mult += (j.mult || 0); chips += (j.chip || 0); });
+
+                const total = mult * chips;
+                this.score += total;
+                this.handsLeft--;
+
+                this.animateScore(total, result.name);
+
+                if (this.score >= this.currentBlind) {
+                    this.time.delayedCall(1200, () => {
+                        this.scene.start('ShopScene', { money: this.money + 15, inventory: this.inventory, currentBlind: this.currentBlind + 300 });
+                    });
+                } else if (this.handsLeft <= 0) {
+                    this.time.delayedCall(1200, () => {
+                        alert("GAME OVER - Meta não atingida.");
+                        this.scene.start('GameScene', { money: 0 });
+                    });
+                } else {
+                    this.clearSelected();
+                    this.updateUI();
+                }
+            }
+
+            discardHand() {
+                if (this.discardsLeft > 0 && this.selectedCards.length > 0) {
+                    this.discardsLeft--;
+                    this.clearSelected();
+                    this.updateUI();
+                }
+            }
+
+            clearSelected() {
+                this.selectedCards.forEach(sel => {
+                    sel.sprite.destroy();
+                    this.hand = this.hand.filter(h => h !== sel);
+                });
+                this.selectedCards = [];
+                this.spawnHand();
+            }
+
+            updateUI() {
+                this.currentScoreText.setText(`${this.score}`);
+                this.statsText.setText(`MÃOS: ${this.handsLeft}  |  LIXO: ${this.discardsLeft}`);
+            }
+
+            animateScore(val, name) {
+                const text = this.add.text(180, 250, `${name}\n+${val}`, { 
+                    fontSize: '40px', color: '#00ff44', fontStyle: 'bold', align: 'center', stroke: '#000', strokeThickness: 6 
+                }).setOrigin(0.5);
+                
+                this.tweens.add({
+                    targets: text,
+                    y: 180,
+                    alpha: 0,
+                    duration: 1200,
+                    onComplete: () => text.destroy()
+                });
+                this.updateUI();
+            }
+        }
+
+        class ShopScene extends Phaser.Scene {
+            constructor() { super('ShopScene'); }
+            create(data) {
+                const { width, height } = this.scale;
+                this.add.rectangle(width/2, height/2, width, height, 0x111);
+                this.add.text(width/2, 100, "LOJA", { fontSize: '40px', color: '#ffd700' }).setOrigin(0.5);
+                this.add.text(width/2, 160, `Você tem $${data.money}`, { fontSize: '20px' }).setOrigin(0.5);
+
+                const items = [
+                    { name: "Coringa Mult", cost: 5, mult: 4, desc: "+4 Mult" },
+                    { name: "Coringa Chip", cost: 5, chip: 50, desc: "+50 Chips" }
+                ];
+
+                items.forEach((item, i) => {
+                    const btn = this.add.rectangle(width/2, 280 + (i*90), 280, 70, 0x333).setInteractive();
+                    this.add.text(width/2, 280 + (i*90), `${item.name}\n${item.desc} - $${item.cost}`, { align: 'center' }).setOrigin(0.5);
+                    btn.on('pointerdown', () => {
+                        if (data.money >= item.cost) {
+                            data.money -= item.cost;
+                            data.inventory.push(item);
+                            this.scene.start('GameScene', data);
+                        }
+                    });
+                });
+
+                const cont = this.add.rectangle(width/2, height - 100, 200, 50, 0x555).setInteractive();
+                this.add.text(width/2, height - 100, "PRÓXIMA RODADA").setOrigin(0.5);
+                cont.on('pointerdown', () => this.scene.start('GameScene', data));
+            }
+        }
+
+        const config = {
+            type: Phaser.AUTO,
+            width: 360,
+            height: 640,
+            parent: 'game-container',
+            scene: [GameScene, ShopScene],
+            scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }
+        };
+
+        new Phaser.Game(config);
+    </script>
+</body>
+</html>
