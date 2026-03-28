@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SO do Terminal de Night City // v3.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* --- Variáveis CSS para Cores e Temas --- */
+        :root {
+            --cp-background: #0b0b0c;
+            --cp-gray-dark: #121214;
+            --cp-gray-light: #1c1c1e;
+            --cp-text: #d1d1d1;
+            --cp-text-muted: #888;
+            --cp-yellow: #fce100;
+            --cp-cyan: #00f0ff;
+            --cp-magenta: #ff00ff;
+            --cp-red: #ff003c;
+            --cp-border-dark: #333;
+            --cp-font: 'Share Tech Mono', monospace;
+        }
+
+        /* --- Estilos Globais --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--cp-font);
+        }
+
+        body {
+            background-color: var(--cp-background);
+            color: var(--cp-text);
+            line-height: 1.4;
+            padding: 20px;
+        }
+
+        h1, h2, h3, h4 {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: normal;
+        }
+
+        /* --- Cabeçalho e Abas --- */
+        header {
+            background-color: var(--cp-gray-dark);
+            padding: 10px 20px;
+            border-bottom: 2px solid var(--cp-cyan);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .header-title {
+            color: var(--cp-cyan);
+            font-size: 1.2rem;
+        }
+
+        .header-status {
+            color: var(--cp-text);
+            font-size: 0.9rem;
+        }
+
+        nav {
+            display: flex;
+            background-color: var(--cp-gray-light);
+            border: 1px solid var(--cp-border-dark);
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--cp-text);
+            padding: 10px 15px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            border-right: 1px solid var(--cp-border-dark);
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .tab-btn.active {
+            color: var(--cp-background);
+            background-color: var(--cp-yellow);
+            border-bottom: 3px solid var(--cp-red);
+        }
+
+        /* --- Estrutura Principal do Conteúdo --- */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- O Criador de Personagem (Layout em duas colunas) --- */
+        .creator-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        /* Coluna de Controles (Esquerda) */
+        .creator-controls {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .creator-section {
+            background-color: var(--cp-gray-dark);
+            border: 1px solid var(--cp-border-dark);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .section-title {
+            color: var(--cp-text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .point-counter {
+            color: var(--cp-yellow);
+            font-size: 0.9rem;
+            float: right;
+        }
+
+        /* --- Botões Táticos e Radio Inputs --- */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tactical-btn {
+            background-color: transparent;
+            border: 1px solid var(--cp-cyan);
+            color: var(--cp-cyan);
+            padding: 10px 20px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+            text-align: center;
+        }
+
+        .tactical-btn:hover {
+            background-color: rgba(0, 240, 255, 0.1);
+        }
+
+        .tactical-btn.active {
+            background-color: var(--cp-cyan);
+            color: var(--cp-background);
+            font-weight: bold;
+        }
+
+        /* Esconde o rádio real */
+        .radio-input {
+            display: none;
+        }
+
+        /* Estilo para quando o rádio associado está checado */
+        .radio-input:checked + .tactical-btn {
+            background-color: var(--cp-cyan);
+            color: var(--cp-background);
+            font-weight: bold;
+        }
+
+        /* --- Sliders de Atributos --- */
+        .attr-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 5px 10px;
+        }
+
+        .attr-label {
+            color: var(--cp-text);
+            font-size: 0.9rem;
+            width: 80px;
+        }
+
+        .attr-value {
+            color: var(--cp-cyan);
+            font-size: 1.1rem;
+            width: 30px;
+            text-align: center;
+        }
+
+        .slider-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .attr-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            background: var(--cp-gray-light);
+            outline: none;
+            border: 1px solid var(--cp-border-dark);
+        }
+
+        .attr-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 20px;
+            background: var(--cp-cyan);
+            cursor: pointer;
+            border: 1px solid var(--cp-background);
+        }
+
+        .attr-slider::-moz-range-thumb {
+            width: 12px;
+            height: 20px;
+            background: var(--cp-cyan);
+            cursor: pointer;
+            border: 1px solid var(--cp-background);
+        }
+
+        .btn-minus, .btn-plus {
+            background: none;
+            border: 1px solid var(--cp-border-dark);
+            color: var(--cp-text);
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        .btn-minus:hover, .btn-plus:hover {
+            border-color: var(--cp-text);
+            color: white;
+        }
+
+        /* --- Painel de Visualização (Direita) --- */
+        .visual-panel {
+            flex: 1.5;
+            min-width: 300px;
+            border: 2px solid var(--cp-cyan);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+            background-color: var(--cp-gray-dark);
+            padding: 15px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 500px; /* Altura mínima como na imagem */
+        }
+
+        .visual-title {
+            color: var(--cp-yellow);
+            font-size: 1.1rem;
+            border-bottom: 2px dashed rgba(0, 240, 255, 0.3);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        /* Imagem Central Grande */
+        .main-v-view {
+            width: 100%;
+            height: 70%;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .main-v-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+
+        /* Miniaturas */
+        .thumbnails-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding-top: 10px;
+            border-top: 2px dashed rgba(0, 240, 255, 0.3);
+        }
+
+        .thumb-box {
+            background-color: #000;
+            border: 1px solid rgba(0, 240, 255, 0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            height: 100px;
+        }
+
+        .thumb-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+
+        /* Placeholders Visuais para Teste (remova quando usar imagens) */
+        .visual-placeholder {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+            text-align: center;
+            padding: 10px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 class="header-title">Sub-rede da NCPD // Acesso Não Autorizado</h1>
+        <div class="header-status">Usuário: V // Status: <span style="color: var(--cp-yellow);">ATIVO</span></div>
+    </header>
+
+    <nav>
+        <button class="tab-btn" onclick="openTab('minigame')">Quebra-Gelo</button>
+        <button class="tab-btn active" onclick="openTab('creator')">Ripperdoc (Criador)</button>
+    </nav>
+
+    <main>
+        <section id="minigame" class="tab-content">
+            <h2>O minigame anterior estaria aqui...</h2>
+        </section>
+
+        <section id="creator" class="tab-content active">
+            <div class="creator-container">
+                
+                <div class="creator-controls">
+                    
+                    <div class="creator-section">
+                        <h3 class="section-title">1. Gênero</h3>
+                        <div class="button-group">
+                            <label>
+                                <input type="radio" name="gender" value="masculino" class="radio-input" onchange="updateVisuals()">
+                                <span class="tactical-btn">Masculino</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="gender" value="feminino" class="radio-input" checked onchange="updateVisuals()">
+                                <span class="tactical-btn">Feminino</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="creator-section">
+                        <h3 class="section-title">2. Caminho de Vida (Lifepath)</h3>
+                        <div class="button-group">
+                            <button class="tactical-btn active" onclick="setLifepath(this, 'nômade')">Nômade</button>
+                            <button class="tactical-btn" onclick="setLifepath(this, 'neomilitarismo')">Marginal</button>
+                            <button class="tactical-btn" onclick="setLifepath(this, ' corporativo')">Corporativo</button>
+                        </div>
+                    </div>
+
+                    <div class="creator-section">
+                        <h3 class="section-title">3. Atributos Iniciais 
+                            <span class="point-counter">Pontos restantes: <span id="attribute-points">7</span></span>
+                        </h3>
+                        
+                        <div class="attr-row">
+                            <span class="attr-label">Corpo</span>
+                            <span class="attr-value" id="val-corpo">3</span>
+                            <div class="slider-container">
+                                <button class="btn-minus" onclick="changeStat('corpo', -1)">-</button>
+                                <input type="range" id="slider-corpo" class="attr-slider" min="3" max="20" value="3" oninput="updateStat('corpo', this.value)">
+                                <button class="btn-plus" onclick="changeStat('corpo', 1)">+</button>
+                            </div>
+                        </div>
+
+                        <div class="attr-row">
+                            <span class="attr-label">Reflexos</span>
+                            <span class="attr-value" id="val-reflexos">3</span>
+                            <div class="slider-container">
+                                <button class="btn-minus" onclick="changeStat('reflexos', -1)">-</button>
+                                <input type="range" id="slider-reflexos" class="attr-slider" min="3" max="20" value="3" oninput="updateStat('reflexos', this.value)">
+                                <button class="btn-plus" onclick="changeStat('reflexos', 1)">+</button>
+                            </div>
+                        </div>
+
+                        <div class="attr-row">
+                            <span class="attr-label">Habilidade Técnica</span>
+                            <span class="attr-value" id="val-tech">3</span>
+                            <div class="slider-container">
+                                <button class="btn-minus" onclick="changeStat('tech', -1)">-</button>
+                                <input type="range" id="slider-tech" class="attr-slider" min="3" max="20" value="3" oninput="updateStat('tech', this.value)">
+                                <button class="btn-plus" onclick="changeStat('tech', 1)">+</button>
+                            </div>
+                        </div>
+
+                        <div class="attr-row">
+                            <span class="attr-label">Inteligência</span>
+                            <span class="attr-value" id="val-inteligencia">3</span>
+                            <div class="slider-container">
+                                <button class="btn-minus" onclick="changeStat('inteligencia', -1)">-</button>
+                                <input type="range" id="slider-inteligencia" class="attr-slider" min="3" max="20" value="3" oninput="updateStat('inteligencia', this.value)">
+                                <button class="btn-plus" onclick="changeStat('inteligencia', 1)">+</button>
+                            </div>
+                        </div>
+
+                        <div class="attr-row">
+                            <span class="attr-label">Frieza</span>
+                            <span class="attr-value" id="val-frieza">3</span>
+                            <div class="slider-container">
+                                <button class="btn-minus" onclick="changeStat('frieza', -1)">-</button>
+                                <input type="range" id="slider-frieza" class="attr-slider" min="3" max="20" value="3" oninput="updateStat('frieza', this.value)">
+                                <button class="btn-plus" onclick="changeStat('frieza', 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="creator-section">
+                        <h3 class="section-title">4. Estilo e Ciberware</h3>
+                        <div class="button-group">
+                            <button class="tactical-btn active" onclick="setStyle(this, 'tactical')">Tactical</button>
+                            <button class="tactical-btn" onclick="setStyle(this, 'kitsch')">Kitsch</button>
+                            <button class="tactical-btn" onclick="setStyle(this, 'neomilitarismo')">Neo-Militar</button>
+                            <button class="tactical-btn" onclick="setStyle(this, 'pascivergio')">Pascivergio</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="visual-panel">
+                    <h2 class="visual-title">Visual do Mercenário // Vista Prévia Atual</h2>
+                    
+                    <div class="main-v-view">
+                        <img id="main-v-image" src="" alt="Vista Prévia de V" class="main-v-image">
+                        <div class="visual-placeholder" style="border: 2px solid var(--cp-red);">
+                            V PRINCIPAL: [ feminimo // tactical ]<br>
+                            (Substitua o arquivo de imagem)
+                        </div>
+                    </div>
+
+                    <div class="thumbnails-grid">
+                        <div class="thumb-box">
+                            <img id="thumb-male" src="" alt="Prévia Masculina" class="thumb-image">
+                            <div class="visual-placeholder">BASE MASC</div>
+                        </div>
+                        <div class="thumb-box">
+                            <img id="thumb-kitsch" src="" alt="Prévia Estilo Kitsch" class="thumb-image">
+                            <div class="visual-placeholder" style="background-color: var(--cp-magenta); color: #000;">KITSCH<br>STYLE</div>
+                        </div>
+                        <div class="thumb-box">
+                            <img id="thumb-cyber" src="" alt="Prévia Ciberware" class="thumb-image">
+                            <div class="visual-placeholder" style="background-color: var(--cp-gray-light);">CYBER<br>MANDÍBULA</div>
+                        </div>
+                        <div class="thumb-box">
+                            <div class="visual-placeholder">DADOS VISUAIS ADICIONAIS</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // --- Lógica de Abas ---
+        function openTab(tabId) {
+            // Esconde todo o conteúdo
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            // Desativa todos os botões
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+
+            // Mostra a aba atual e ativa o botão
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // --- Lógica do Criador de Personagem (Ripperdoc) ---
+
+        // Configuração de Imagens (IMPORTANTE PARA USO REAL)
+        // Crie uma pasta 'images' no mesmo diretório deste HTML.
+        // Nomes de arquivo sugeridos (para o script abaixo):
+        // images/v_feminino_tactical.png (principal)
+        // images/v_masculino_tactical.png
+        // images/v_feminino_kitsch.png
+        // images/thumb_male_tactical.png
+        // images/thumb_cyber_jaw.png
+
+        const currentSettings = {
+            gender: 'feminino',
+            lifepath: 'nômade',
+            style: 'tactical'
+        };
+
+        const stats = {
+            points: 7,
+            corpo: 3,
+            reflexos: 3,
+            tech: 3,
+            inteligencia: 3,
+            frieza: 3
+        };
+
+        // Função Principal de Visualização (atualiza as imagens)
+        function updateVisuals() {
+            // Pega o gênero do rádio input
+            const gender = document.querySelector('input[name="gender"]:checked').value;
+            currentSettings.gender = gender;
+            const style = currentSettings.style;
+
+            // Elementos DOM de imagem
+            const mainImg = document.getElementById('main-v-image');
+            const mainPlaceholder = document.querySelector('.main-v-view .visual-placeholder');
+            const thumbMale = document.getElementById('thumb-male');
+            const thumbCyber = document.getElementById('thumb-cyber');
+
+            // --- Lógica de Placeholders (Remova ao usar imagens reais) ---
+            mainPlaceholder.innerHTML = `V PRINCIPAL: [ ${currentSettings.gender} // ${currentSettings.style} ]<br>(Substitua o arquivo de imagem)`;
+            // Muda a cor do placeholder para teste
+            mainPlaceholder.style.borderColor = (gender === 'masculino') ? 'var(--cp-yellow)' : 'var(--cp-red)';
+            
+            // Simula troca de imagem do male base (visível se tiver imagem)
+            if (thumbMale.src) thumbMale.src = `images/thumb_male_${style}.png`;
+
+            // --- Fim da Lógica de Placeholders ---
+
+            // --- CÓDIGO PARA USO REAL ---
+            // Para trocar as imagens de verdade, remova os comentários abaixo:
+            
+            /*
+            // Atualiza a imagem central
+            const mainImagePath = `images/v_${gender}_${style}.png`;
+            mainImg.src = mainImagePath;
+            mainPlaceholder.style.display = 'none'; // Esconde o texto de teste
+
+            // Atualiza as miniaturas (se necessário)
+            thumbMale.src = `images/thumb_male_${style}.png`; // Mostra a base masculina com o estilo atual
+            thumbCyber.src = `images/thumb_cyber_jaw.png`; // Imagem fixa de ciberware
+            // etc.
+            */
+        }
+
+        // Funções para definir Lifepath e Estilo (botões de grupo)
+        function setLifepath(element, lifepath) {
+            // Atualiza a UI dos botões
+            const buttons = element.closest('.button-group').querySelectorAll('button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+
+            // Salva a escolha
+            currentSettings.lifepath = lifepath;
+            console.log("Caminho de Vida definido:", lifepath);
+        }
+
+        function setStyle(element, style) {
+            // Atualiza a UI dos botões
+            const buttons = element.closest('.button-group').querySelectorAll('button');
+            buttons.forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+
+            // Salva a escolha e atualiza a visualização
+            currentSettings.style = style;
+            updateVisuals();
+        }
+
+        // --- Lógica de Atributos com Pontos Restantes ---
+        
+        function updateStatUI(statKey) {
+            document.getElementById(`val-${statKey}`).innerText = stats[statKey];
+            document.getElementById(`slider-${statKey}`).value = stats[statKey];
+            document.getElementById(`attribute-points`).innerText = stats.points;
+        }
+
+        function changeStat(statKey, delta) {
+            const currentValue = stats[statKey];
+            const maxDelta = 20 - currentValue;
+            const minDelta = 3 - currentValue;
+
+            // Tenta aumentar
+            if (delta > 0 && stats.points > 0 && currentValue < 20) {
+                stats[statKey]++;
+                stats.points--;
+            }
+            // Tenta diminuir
+            else if (delta < 0 && currentValue > 3) {
+                stats[statKey]--;
+                stats.points++;
+            }
+
+            updateStatUI(statKey);
+        }
+
+        function updateStat(statKey, newValue) {
+            const oldValue = stats[statKey];
+            const diff = newValue - oldValue;
+
+            // Tenta aumentar (consome pontos)
+            if (diff > 0) {
+                if (stats.points >= diff) {
+                    stats[statKey] = parseInt(newValue);
+                    stats.points -= diff;
+                } else {
+                    // Não tem pontos suficientes, reverte o slider
+                    document.getElementById(`slider-${statKey}`).value = oldValue;
+                    alert("Pontos de atributo insuficientes.");
+                }
+            }
+            // Diminui (devolve pontos)
+            else if (diff < 0) {
+                stats[statKey] = parseInt(newValue);
+                stats.points += Math.abs(diff);
+            }
+
+            updateStatUI(statKey);
+        }
+
+        // Inicializa a visualização no carregamento
+        window.onload = updateVisuals;
+
+    </script>
+</body>
+</html>

@@ -215,3 +215,96 @@ function renderNode(nodeId) {
 
 // Inicializar o RPG
 renderNode('start');
+
+// --- LÓGICA DO CRIADOR DE PERSONAGEM (RIPPERDOC) ---
+
+// Status iniciais de V
+const stats = {
+    body: 3,
+    ref: 3,
+    tech: 3,
+    int: 3,
+    cool: 3
+};
+
+let availablePoints = 7;
+const MIN_STAT = 3;
+const MAX_STAT = 6;
+
+function changeStat(statKey, delta) {
+    const currentValue = stats[statKey];
+    
+    // Tentando Aumentar
+    if (delta > 0) {
+        if (availablePoints > 0 && currentValue < MAX_STAT) {
+            stats[statKey]++;
+            availablePoints--;
+        }
+    } 
+    // Tentando Diminuir
+    else if (delta < 0) {
+        if (currentValue > MIN_STAT) {
+            stats[statKey]--;
+            availablePoints++;
+        }
+    }
+    
+    updateCreatorUI();
+}
+
+function updateCreatorUI() {
+    // Atualiza os números na tela
+    document.getElementById('val-body').innerText = stats.body;
+    document.getElementById('val-ref').innerText = stats.ref;
+    document.getElementById('val-tech').innerText = stats.tech;
+    document.getElementById('val-int').innerText = stats.int;
+    document.getElementById('val-cool').innerText = stats.cool;
+    
+    // Atualiza os pontos restantes
+    const pointsDisplay = document.getElementById('attr-points');
+    pointsDisplay.innerText = availablePoints;
+    
+    // Muda a cor dos pontos se zerar
+    if (availablePoints === 0) {
+        pointsDisplay.style.color = 'var(--cp-red)';
+    } else {
+        pointsDisplay.style.color = 'var(--cp-yellow)';
+    }
+}
+
+function generateID() {
+    // Pega os valores selecionados
+    const lifepath = document.querySelector('input[name="lifepath"]:checked').value;
+    const style = document.getElementById('v-style').value;
+    const cyberware = document.getElementById('v-cyberware').value;
+    
+    const idCard = document.getElementById('v-id-card');
+    
+    // Constrói o HTML do Cartão
+    idCard.innerHTML = `
+        <div class="id-header">
+            <h3>REGISTRO DE MERCENÁRIO DA NCPD</h3>
+            <p style="color: #888; font-size: 12px;">STATUS: PROCURADO // NÍVEL DE AMEAÇA: ALTO</p>
+        </div>
+        <div class="id-data">
+            <p><strong>ALCUNHA:</strong> V</p>
+            <p><strong>CAMINHO DE VIDA:</strong> ${lifepath}</p>
+            <p><strong>ESTILO VISUAL:</strong> ${style}</p>
+            <p><strong>MODIFICAÇÃO FACIAL:</strong> ${cyberware}</p>
+            <br>
+            <p><strong>[ DADOS BIOMÉTRICOS / ATRIBUTOS ]</strong></p>
+            <ul style="list-style-type: none; margin-left: 0; margin-top: 10px;">
+                <li>CORPO: <span class="highlight">${stats.body}</span></li>
+                <li>REFLEXOS: <span class="highlight">${stats.ref}</span></li>
+                <li>HAB. TÉCNICA: <span class="highlight">${stats.tech}</span></li>
+                <li>INTELIGÊNCIA: <span class="highlight">${stats.int}</span></li>
+                <li>FRIEZA: <span class="highlight">${stats.cool}</span></li>
+            </ul>
+        </div>
+    `;
+    
+    idCard.style.display = 'block';
+    
+    // Rola a página para baixo para ver a identidade gerada
+    idCard.scrollIntoView({ behavior: 'smooth' });
+}

@@ -307,3 +307,163 @@ h2 {
 /* Listas Diversas */
 ul { list-style-type: square; margin-left: 20px; margin-bottom: 20px; color: var(--cp-cyan); }
 ul span { color: var(--cp-text); }
+
+/* --- Estilos do Criador de Personagem (Ripperdoc) --- */
+.creator-container {
+    background: #111;
+    border: 1px solid #333;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.creator-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px dashed #333;
+}
+
+.creator-section h3 {
+    color: var(--cp-yellow);
+    text-transform: uppercase;
+    margin-bottom: 15px;
+    font-size: 18px;
+}
+
+/* Radio Cards do Lifepath */
+.lifepath-options {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.radio-card {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+    cursor: pointer;
+}
+
+.radio-card input {
+    position: absolute;
+    opacity: 0;
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    background: var(--cp-gray);
+    border: 2px solid #333;
+    color: #888;
+    height: 100%;
+    transition: all 0.2s;
+}
+
+.card-content strong {
+    color: var(--cp-text);
+    font-size: 16px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+
+.card-content span { font-size: 12px; }
+
+/* Efeito quando o radio está selecionado */
+.radio-card input:checked + .card-content {
+    border-color: var(--cp-yellow);
+    background: rgba(252, 225, 0, 0.1);
+    box-shadow: 0 0 10px rgba(252, 225, 0, 0.2);
+}
+
+.radio-card input:checked + .card-content strong {
+    color: var(--cp-yellow);
+}
+
+/* Grade de Atributos */
+.attributes-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+}
+
+.attr-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--cp-gray);
+    padding: 10px 15px;
+    border-left: 3px solid var(--cp-cyan);
+}
+
+.attr-name {
+    font-weight: bold;
+    color: var(--cp-text);
+    text-transform: uppercase;
+}
+
+.attr-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.btn-attr {
+    background: #333;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-attr:hover { background: var(--cp-cyan); color: #000; }
+
+.attr-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--cp-yellow);
+    width: 20px;
+    text-align: center;
+}
+
+/* Selects */
+.cp-select {
+    width: 100%;
+    padding: 10px;
+    background: var(--cp-gray);
+    color: var(--cp-cyan);
+    border: 1px solid var(--cp-cyan);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 16px;
+    outline: none;
+}
+
+/* Cartão de Identidade Final */
+.id-card {
+    margin-top: 30px;
+    padding: 20px;
+    background: repeating-linear-gradient(45deg, #0b0b0c, #0b0b0c 10px, #111 10px, #111 20px);
+    border: 2px solid var(--cp-yellow);
+    box-shadow: 0 0 20px rgba(252, 225, 0, 0.2);
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.id-header {
+    border-bottom: 2px solid var(--cp-red);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.id-header h3 {
+    color: var(--cp-red);
+    margin: 0;
+    font-size: 24px;
+    text-transform: uppercase;
+}
+
+.id-data p { margin-bottom: 5px; }
+.id-data strong { color: var(--cp-cyan); }

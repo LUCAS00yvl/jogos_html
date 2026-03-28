@@ -13,11 +13,12 @@
         <p>Usuário: V // Status: ATIVO</p>
     </header>
 
-    <nav>
+  <nav>
         <button class="tab-btn active" onclick="openTab('minigame')">Quebra-Gelo</button>
         <button class="tab-btn" onclick="openTab('rpg')">RPG de Texto</button>
         <button class="tab-btn" onclick="openTab('wiki')">Wiki Corporativa</button>
         <button class="tab-btn" onclick="openTab('novel')">Arquivo de Texto</button>
+        <button class="tab-btn" onclick="openTab('creator')">Ripperdoc (Criador)</button>
         <button class="tab-btn" onclick="openTab('misc')">Diversos</button>
     </nav>
 
@@ -124,6 +125,124 @@
                         <p class="wiki-sub">Território: Westbrook / Japantown</p>
                         <p>Gangue com raízes na Yakuza, apoiada silenciosamente pela Arasaka. Dominam o entretenimento noturno, cassinos e braindances ilegais. Preferem katanas, motos velozes e tatuagens luminosas.</p>
                     </div>
+                </div>
+            </div>
+        </section>
+        <!-- ABA DO CRIADOR DE PERSONAGEM (RIPPERDOC) -->
+        <section id="creator" class="tab-content">
+            <h2>Clínica de Ripperdoc // Novo Cliente</h2>
+            <p>Construa seu mercenário. Defina seu passado, instale seu cromo e distribua seus pontos de atributo.</p>
+
+            <div class="creator-container">
+                <!-- Caminho de Vida -->
+                <div class="creator-section">
+                    <h3>1. Caminho de Vida (Lifepath)</h3>
+                    <div class="lifepath-options">
+                        <label class="radio-card">
+                            <input type="radio" name="lifepath" value="Nômade" checked>
+                            <span class="card-content">
+                                <strong>Nômade</strong>
+                                <span>Vagando pelas Badlands. Família e liberdade acima de tudo.</span>
+                            </span>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="lifepath" value="Marginal">
+                            <span class="card-content">
+                                <strong>Marginal (Streetkid)</strong>
+                                <span>Criado nas ruas de Heywood. Conhece as gangues e os becos.</span>
+                            </span>
+                        </label>
+                        <label class="radio-card">
+                            <input type="radio" name="lifepath" value="Corporativo">
+                            <span class="card-content">
+                                <strong>Corporativo</strong>
+                                <span>Ex-agente da Arasaka. Dinheiro, estresse e espionagem de alto nível.</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Atributos -->
+                <div class="creator-section">
+                    <h3>2. Atributos Iniciais <span class="highlight">(Pontos Restantes: <span id="attr-points">7</span>)</span></h3>
+                    <p style="font-size: 12px; margin-bottom: 10px; color: #888;">Mínimo: 3 | Máximo: 6</p>
+                    <div class="attributes-grid">
+                        
+                        <div class="attr-row">
+                            <span class="attr-name">Corpo</span>
+                            <div class="attr-controls">
+                                <button class="btn-attr" onclick="changeStat('body', -1)">-</button>
+                                <span class="attr-value" id="val-body">3</span>
+                                <button class="btn-attr" onclick="changeStat('body', 1)">+</button>
+                            </div>
+                        </div>
+
+                        <div class="attr-row">
+                            <span class="attr-name">Reflexos</span>
+                            <div class="attr-controls">
+                                <button class="btn-attr" onclick="changeStat('ref', -1)">-</button>
+                                <span class="attr-value" id="val-ref">3</span>
+                                <button class="btn-attr" onclick="changeStat('ref', 1)">+</button>
+                            </div>
+                        </div>
+
+                        <div class="attr-row">
+                            <span class="attr-name">Habilidade Técnica</span>
+                            <div class="attr-controls">
+                                <button class="btn-attr" onclick="changeStat('tech', -1)">-</button>
+                                <span class="attr-value" id="val-tech">3</span>
+                                <button class="btn-attr" onclick="changeStat('tech', 1)">+</button>
+                            </div>
+                        </div>
+
+                        <div class="attr-row">
+                            <span class="attr-name">Inteligência</span>
+                            <div class="attr-controls">
+                                <button class="btn-attr" onclick="changeStat('int', -1)">-</button>
+                                <span class="attr-value" id="val-int">3</span>
+                                <button class="btn-attr" onclick="changeStat('int', 1)">+</button>
+                            </div>
+                        </div>
+
+                        <div class="attr-row">
+                            <span class="attr-name">Frieza</span>
+                            <div class="attr-controls">
+                                <button class="btn-attr" onclick="changeStat('cool', -1)">-</button>
+                                <span class="attr-value" id="val-cool">3</span>
+                                <button class="btn-attr" onclick="changeStat('cool', 1)">+</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Aparência / Estilo -->
+                <div class="creator-section">
+                    <h3>3. Estilo e Ciberware</h3>
+                    <div class="style-options">
+                        <label>Estilo Visual:</label>
+                        <select id="v-style" class="cp-select">
+                            <option value="Kitsch">Kitsch (Neon, Cores Berrantes)</option>
+                            <option value="Entropismo">Entropismo (Prático, Desgastado)</option>
+                            <option value="Neomilitarismo">Neomilitarismo (Tático, Preto e Liso)</option>
+                            <option value="Neokitsch">Neokitsch (Luxo Corporativo Extremo)</option>
+                        </select>
+
+                        <label style="margin-top: 15px;">Ciberware Facial:</label>
+                        <select id="v-cyberware" class="cp-select">
+                            <option value="Nenhum (Orgânico)">Nenhum (Visual Orgânico)</option>
+                            <option value="Linhas Subdérmicas">Linhas Subdérmicas Simples</option>
+                            <option value="Óticas Kiroshi Aparentes">Óticas Kiroshi Aparentes</option>
+                            <option value="Placas Metálicas">Placas Metálicas na Mandíbula</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn-action" style="width: 100%; margin-top: 20px;" onclick="generateID()">IMPRIMIR IDENTIDADE MERCENÁRIA</button>
+
+                <!-- Saída da Identidade -->
+                <div id="v-id-card" class="id-card" style="display: none;">
+                    <!-- O JS vai injetar os dados aqui -->
                 </div>
             </div>
         </section>
