@@ -1,50 +1,81 @@
-/* Variáveis CSS para o Tema Cyberpunk */
+/* =========================================
+   1. VARIÁVEIS E TEMA GLOBAL
+   ========================================= */
 :root {
+    /* Fundo e Escala de Cinza */
+    --cp-background: #0b0b0c;
+    --cp-gray-dark: #121214;
+    --cp-gray: #1a1a1c;
+    --cp-gray-light: #1c1c1e;
+    --cp-border-dark: #333;
+    
+    /* Cores de Destaque */
+    --cp-text: #d1d1d1;
+    --cp-text-muted: #888;
     --cp-yellow: #fce100;
     --cp-cyan: #00f0ff;
+    --cp-magenta: #ff00ff;
     --cp-red: #ff003c;
-    --cp-dark: #0b0b0c;
-    --cp-gray: #1a1a1c;
-    --cp-text: #d1d1d1;
+    
+    /* Tipografia */
+    --cp-font: 'Share Tech Mono', 'Courier New', Courier, monospace;
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: var(--cp-font);
 }
 
 body {
-    background-color: var(--cp-dark);
+    background-color: var(--cp-background);
     color: var(--cp-text);
     line-height: 1.6;
     overflow-x: hidden;
+    padding: 20px;
 }
 
-/* Cabeçalho */
+h1, h2, h3, h4 {
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: normal;
+}
+
+/* =========================================
+   2. CABEÇALHO E NAVEGAÇÃO
+   ========================================= */
 header {
     background-color: var(--cp-yellow);
-    color: var(--cp-dark);
     padding: 20px;
-    text-transform: uppercase;
     border-bottom: 4px solid var(--cp-cyan);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
 }
 
-h1 {
+header h1 {
+    color: var(--cp-gray-dark);
+    font-size: 1.5rem;
     font-weight: 900;
     letter-spacing: 2px;
-    margin-bottom: 10px;
 }
 
-/* Abas de Navegação */
+header p, .header-status {
+    color: var(--cp-gray-dark);
+    font-size: 1rem;
+}
+
 nav {
     display: flex;
-    background-color: var(--cp-gray);
+    background-color: var(--cp-gray-light);
+    border: 1px solid var(--cp-border-dark);
     border-bottom: 2px solid var(--cp-red);
+    margin-bottom: 20px;
 }
 
-nav button {
+.tab-btn {
     flex: 1;
     background: none;
     border: none;
@@ -54,25 +85,34 @@ nav button {
     cursor: pointer;
     text-transform: uppercase;
     font-weight: bold;
+    border-right: 1px solid var(--cp-border-dark);
     transition: all 0.2s;
 }
 
-nav button:hover, nav button.active {
+.tab-btn:hover {
     background-color: var(--cp-red);
     color: white;
     box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
 }
 
-/* Área de Conteúdo Principal */
+.tab-btn.active {
+    color: var(--cp-background);
+    background-color: var(--cp-yellow);
+    border-bottom: 3px solid var(--cp-red);
+}
+
+/* =========================================
+   3. ESTRUTURA PRINCIPAL E ABAS
+   ========================================= */
 main {
-    padding: 30px;
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
+    padding: 10px;
 }
 
 .tab-content {
     display: none;
-    animation: fadeIn 0.3s ease-in-out;
+    animation: fadeIn 0.4s ease-in-out;
 }
 
 .tab-content.active {
@@ -92,7 +132,9 @@ h2 {
     padding-left: 10px;
 }
 
-/* Protocolo de Invasão (Breach Protocol) */
+/* =========================================
+   4. MINIGAME E WIKI (Estilos Mantidos)
+   ========================================= */
 .breach-container {
     display: flex;
     gap: 30px;
@@ -100,10 +142,7 @@ h2 {
     margin-top: 20px;
 }
 
-.breach-panel {
-    flex: 1;
-    min-width: 250px;
-}
+.breach-panel { flex: 1; min-width: 250px; }
 
 .breach-panel h3, .matrix-container h3 {
     color: var(--cp-yellow);
@@ -123,15 +162,12 @@ h2 {
     font-size: 18px;
     font-weight: bold;
     padding: 8px 12px;
-    background: var(--cp-dark);
+    background: var(--cp-background);
     border: 1px solid var(--cp-cyan);
     color: var(--cp-text);
 }
 
-.hex-code.matched {
-    color: var(--cp-dark);
-    background: var(--cp-cyan);
-}
+.hex-code.matched { color: var(--cp-background); background: var(--cp-cyan); }
 
 .matrix-grid {
     display: grid;
@@ -156,29 +192,12 @@ h2 {
     transition: all 0.2s;
 }
 
-/* Destaca a linha ou coluna ativa */
-.matrix-cell.active-track {
-    background: rgba(0, 240, 255, 0.1);
-}
+.matrix-cell.active-track { background: rgba(0, 240, 255, 0.1); }
+.matrix-cell.selectable { cursor: pointer; color: var(--cp-cyan); }
+.matrix-cell.selectable:hover { background: var(--cp-cyan); color: var(--cp-background); }
+.matrix-cell.used { opacity: 0.1; pointer-events: none; }
 
-/* Mostra onde o jogador pode clicar */
-.matrix-cell.selectable {
-    cursor: pointer;
-    color: var(--cp-cyan);
-}
-
-.matrix-cell.selectable:hover {
-    background: var(--cp-cyan);
-    color: var(--cp-dark);
-}
-
-/* Células já clicadas ficam apagadas */
-.matrix-cell.used {
-    opacity: 0.1;
-    pointer-events: none;
-}
-
-/* --- Estilos da Wiki Expandida --- */
+/* Wiki */
 .wiki-category-title {
     color: var(--cp-yellow);
     margin: 30px 0 15px 0;
@@ -195,7 +214,7 @@ h2 {
 
 .wiki-card {
     background-color: var(--cp-gray);
-    border: 1px solid #333;
+    border: 1px solid var(--cp-border-dark);
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
@@ -212,12 +231,11 @@ h2 {
     width: 100%;
     height: 180px;
     object-fit: cover;
-    background-color: #000; /* Fundo escuro caso a imagem não carregue */
+    background-color: #000;
     border-bottom: 2px solid var(--cp-red);
     position: relative;
 }
 
-/* Pseudo-elemento para indicar onde a imagem vai quando está vazia */
 .wiki-image[src=""]::after {
     content: 'DADOS VISUAIS AUSENTES // INSERIR IMG';
     position: absolute;
@@ -232,31 +250,12 @@ h2 {
     padding: 20px;
 }
 
-.wiki-info {
-    padding: 15px;
-}
+.wiki-info { padding: 15px; }
+.wiki-info h4 { color: var(--cp-cyan); font-size: 20px; margin-bottom: 5px; text-transform: uppercase; }
+.wiki-sub { color: var(--cp-text-muted); font-size: 12px; margin-bottom: 15px; font-weight: bold; text-transform: uppercase; }
+.wiki-info p { font-size: 14px; color: var(--cp-text); }
 
-.wiki-info h4 {
-    color: var(--cp-cyan);
-    font-size: 20px;
-    margin-bottom: 5px;
-    text-transform: uppercase;
-}
-
-.wiki-sub {
-    color: #888;
-    font-size: 12px;
-    margin-bottom: 15px;
-    font-weight: bold;
-    text-transform: uppercase;
-}
-
-.wiki-info p {
-    font-size: 14px;
-    color: var(--cp-text);
-}
-
-/* Caixas de Texto (Conto/Misc) */
+/* Diversos / Misc / Textos */
 .text-box {
     background-color: var(--cp-gray);
     padding: 20px;
@@ -266,8 +265,10 @@ h2 {
 }
 
 .highlight { color: var(--cp-yellow); }
+ul { list-style-type: square; margin-left: 20px; margin-bottom: 20px; color: var(--cp-cyan); }
+ul span { color: var(--cp-text); }
 
-/* Terminal do RPG de Texto */
+/* RPG de Texto */
 #rpg-terminal {
     background-color: #000;
     border: 1px solid var(--cp-red);
@@ -282,11 +283,7 @@ h2 {
 .rpg-sys { color: var(--cp-yellow); font-weight: bold; }
 .rpg-desc { color: #fff; }
 
-#rpg-controls {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-}
+#rpg-controls { display: flex; gap: 10px; flex-wrap: wrap; }
 
 .rpg-btn {
     background-color: var(--cp-gray);
@@ -299,171 +296,194 @@ h2 {
     text-transform: uppercase;
 }
 
-.rpg-btn:hover {
-    background-color: var(--cp-cyan);
-    color: var(--cp-dark);
-}
+.rpg-btn:hover { background-color: var(--cp-cyan); color: var(--cp-background); }
 
-/* Listas Diversas */
-ul { list-style-type: square; margin-left: 20px; margin-bottom: 20px; color: var(--cp-cyan); }
-ul span { color: var(--cp-text); }
-
-/* --- Estilos do Criador de Personagem (Ripperdoc) --- */
+/* =========================================
+   5. CRIADOR DE PERSONAGENS (NOVO RIPPERDOC)
+   ========================================= */
 .creator-container {
-    background: #111;
-    border: 1px solid #333;
-    padding: 20px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
     margin-top: 20px;
 }
 
-.creator-section {
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 1px dashed #333;
-}
-
-.creator-section h3 {
-    color: var(--cp-yellow);
-    text-transform: uppercase;
-    margin-bottom: 15px;
-    font-size: 18px;
-}
-
-/* Radio Cards do Lifepath */
-.lifepath-options {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-.radio-card {
+.creator-controls {
     flex: 1;
-    min-width: 200px;
-    position: relative;
-    cursor: pointer;
-}
-
-.radio-card input {
-    position: absolute;
-    opacity: 0;
-}
-
-.card-content {
+    min-width: 300px;
     display: flex;
     flex-direction: column;
+    gap: 15px;
+}
+
+.creator-section {
+    background-color: var(--cp-gray-dark);
+    border: 1px solid var(--cp-border-dark);
     padding: 15px;
-    background: var(--cp-gray);
-    border: 2px solid #333;
-    color: #888;
-    height: 100%;
-    transition: all 0.2s;
-}
-
-.card-content strong {
-    color: var(--cp-text);
-    font-size: 16px;
-    text-transform: uppercase;
-    margin-bottom: 5px;
-}
-
-.card-content span { font-size: 12px; }
-
-/* Efeito quando o radio está selecionado */
-.radio-card input:checked + .card-content {
-    border-color: var(--cp-yellow);
-    background: rgba(252, 225, 0, 0.1);
-    box-shadow: 0 0 10px rgba(252, 225, 0, 0.2);
-}
-
-.radio-card input:checked + .card-content strong {
-    color: var(--cp-yellow);
-}
-
-/* Grade de Atributos */
-.attributes-grid {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    max-width: 400px;
 }
 
-.attr-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--cp-gray);
-    padding: 10px 15px;
-    border-left: 3px solid var(--cp-cyan);
-}
-
-.attr-name {
-    font-weight: bold;
-    color: var(--cp-text);
+.section-title {
+    color: var(--cp-text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 5px;
     text-transform: uppercase;
 }
 
-.attr-controls {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-.btn-attr {
-    background: #333;
-    color: white;
-    border: none;
-    width: 30px;
-    height: 30px;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.btn-attr:hover { background: var(--cp-cyan); color: #000; }
-
-.attr-value {
-    font-size: 20px;
-    font-weight: bold;
+.point-counter {
     color: var(--cp-yellow);
-    width: 20px;
+    font-size: 0.9rem;
+    float: right;
+}
+
+/* Botões Táticos e Radios */
+.button-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.tactical-btn {
+    background-color: transparent;
+    border: 1px solid var(--cp-cyan);
+    color: var(--cp-cyan);
+    padding: 10px 20px;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    flex: 1;
     text-align: center;
 }
 
-/* Selects */
-.cp-select {
+.tactical-btn:hover { background-color: rgba(0, 240, 255, 0.1); }
+.tactical-btn.active { background-color: var(--cp-cyan); color: var(--cp-background); font-weight: bold; }
+
+.radio-input { display: none; }
+.radio-input:checked + .tactical-btn {
+    background-color: var(--cp-cyan);
+    color: var(--cp-background);
+    font-weight: bold;
+}
+
+/* Sliders de Atributos */
+.attr-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background-color: rgba(255, 255, 255, 0.02);
+    padding: 5px 10px;
+    border-left: 3px solid var(--cp-cyan);
+}
+
+.attr-label { color: var(--cp-text); font-size: 0.9rem; width: 80px; font-weight: bold; text-transform: uppercase; }
+.attr-value { color: var(--cp-yellow); font-size: 1.1rem; width: 30px; text-align: center; font-weight: bold; }
+
+.slider-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.attr-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
     width: 100%;
-    padding: 10px;
-    background: var(--cp-gray);
-    color: var(--cp-cyan);
-    border: 1px solid var(--cp-cyan);
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 16px;
+    height: 4px;
+    background: var(--cp-gray-light);
     outline: none;
+    border: 1px solid var(--cp-border-dark);
 }
 
-/* Cartão de Identidade Final */
-.id-card {
-    margin-top: 30px;
-    padding: 20px;
-    background: repeating-linear-gradient(45deg, #0b0b0c, #0b0b0c 10px, #111 10px, #111 20px);
-    border: 2px solid var(--cp-yellow);
-    box-shadow: 0 0 20px rgba(252, 225, 0, 0.2);
-    animation: fadeIn 0.5s ease-in-out;
+.attr-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 20px;
+    background: var(--cp-cyan);
+    cursor: pointer;
+    border: 1px solid var(--cp-background);
 }
 
-.id-header {
-    border-bottom: 2px solid var(--cp-red);
+.btn-minus, .btn-plus {
+    background: none;
+    border: 1px solid var(--cp-border-dark);
+    color: var(--cp-text);
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.btn-minus:hover, .btn-plus:hover { border-color: var(--cp-text); color: white; background: var(--cp-border-dark); }
+
+/* Painel Visual (Direita) */
+.visual-panel {
+    flex: 1.5;
+    min-width: 300px;
+    border: 2px solid var(--cp-cyan);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+    background-color: var(--cp-gray-dark);
+    padding: 15px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 500px;
+}
+
+.visual-title {
+    color: var(--cp-yellow);
+    font-size: 1.1rem;
+    border-bottom: 2px dashed rgba(0, 240, 255, 0.3);
     padding-bottom: 10px;
     margin-bottom: 15px;
 }
 
-.id-header h3 {
-    color: var(--cp-red);
-    margin: 0;
-    font-size: 24px;
-    text-transform: uppercase;
+.main-v-view {
+    width: 100%;
+    height: 70%;
+    background-color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    margin-bottom: 15px;
 }
 
-.id-data p { margin-bottom: 5px; }
-.id-data strong { color: var(--cp-cyan); }
+.main-v-image { max-width: 100%; max-height: 100%; object-fit: cover; }
+
+.thumbnails-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 2px dashed rgba(0, 240, 255, 0.3);
+}
+
+.thumb-box {
+    background-color: #000;
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    height: 100px;
+}
+
+.thumb-image { max-width: 100%; max-height: 100%; object-fit: cover; }
+
+.visual-placeholder {
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    text-align: center;
+    padding: 10px;
+}

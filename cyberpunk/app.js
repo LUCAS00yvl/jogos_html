@@ -308,3 +308,81 @@ function generateID() {
     // Rola a página para baixo para ver a identidade gerada
     idCard.scrollIntoView({ behavior: 'smooth' });
 }
+
+// --- Lógica do Criador de Personagem (Ripperdoc) ---
+
+const currentSettings = {
+    gender: 'feminino',
+    lifepath: 'nômade',
+    style: 'tactical'
+};
+
+function updateVisuals() {
+    const gender = document.querySelector('input[name="gender"]:checked').value;
+    currentSettings.gender = gender;
+    const style = currentSettings.style;
+
+    const mainImg = document.getElementById('main-v-image');
+    const mainPlaceholder = document.querySelector('.main-v-view .visual-placeholder');
+    const thumbMale = document.getElementById('thumb-male');
+    
+    mainPlaceholder.innerHTML = `V PRINCIPAL: [ ${currentSettings.gender} // ${currentSettings.style} ]<br>(Substitua o arquivo de imagem)`;
+    mainPlaceholder.style.borderColor = (gender === 'masculino') ? 'var(--cp-yellow)' : 'var(--cp-red)';
+    
+    if (thumbMale && thumbMale.src) thumbMale.src = `images/thumb_male_${style}.png`;
+}
+
+function setLifepath(element, lifepath) {
+    const buttons = element.closest('.button-group').querySelectorAll('button');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    element.classList.add('active');
+    currentSettings.lifepath = lifepath;
+}
+
+function setStyle(element, style) {
+    const buttons = element.closest('.button-group').querySelectorAll('button');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    element.classList.add('active');
+    currentSettings.style = style;
+    updateVisuals();
+}
+
+function updateStatUI(statKey) {
+    document.getElementById(`val-${statKey}`).innerText = stats[statKey];
+    document.getElementById(`slider-${statKey}`).value = stats[statKey];
+    document.getElementById(`attribute-points`).innerText = stats.points;
+}
+
+function changeStat(statKey, delta) {
+    const currentValue = stats[statKey];
+    if (delta > 0 && stats.points > 0 && currentValue < 20) {
+        stats[statKey]++;
+        stats.points--;
+    } else if (delta < 0 && currentValue > 3) {
+        stats[statKey]--;
+        stats.points++;
+    }
+    updateStatUI(statKey);
+}
+
+function updateStat(statKey, newValue) {
+    const oldValue = stats[statKey];
+    const diff = newValue - oldValue;
+
+    if (diff > 0) {
+        if (stats.points >= diff) {
+            stats[statKey] = parseInt(newValue);
+            stats.points -= diff;
+        } else {
+            document.getElementById(`slider-${statKey}`).value = oldValue;
+            alert("Pontos de atributo insuficientes.");
+        }
+    } else if (diff < 0) {
+        stats[statKey] = parseInt(newValue);
+        stats.points += Math.abs(diff);
+    }
+    updateStatUI(statKey);
+}
+
+// Chamar no carregamento da página
+window.addEventListener('DOMContentLoaded', updateVisuals);

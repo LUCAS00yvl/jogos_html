@@ -132,117 +132,128 @@
         <section id="creator" class="tab-content">
             <h2>Clínica de Ripperdoc // Novo Cliente</h2>
             <p>Construa seu mercenário. Defina seu passado, instale seu cromo e distribua seus pontos de atributo.</p>
-
+            
             <div class="creator-container">
-                <!-- Caminho de Vida -->
-                <div class="creator-section">
-                    <h3>1. Caminho de Vida (Lifepath)</h3>
-                    <div class="lifepath-options">
-                        <label class="radio-card">
-                            <input type="radio" name="lifepath" value="Nômade" checked>
-                            <span class="card-content">
-                                <strong>Nômade</strong>
-                                <span>Vagando pelas Badlands. Família e liberdade acima de tudo.</span>
-                            </span>
-                        </label>
-                        <label class="radio-card">
-                            <input type="radio" name="lifepath" value="Marginal">
-                            <span class="card-content">
-                                <strong>Marginal (Streetkid)</strong>
-                                <span>Criado nas ruas de Heywood. Conhece as gangues e os becos.</span>
-                            </span>
-                        </label>
-                        <label class="radio-card">
-                            <input type="radio" name="lifepath" value="Corporativo">
-                            <span class="card-content">
-                                <strong>Corporativo</strong>
-                                <span>Ex-agente da Arasaka. Dinheiro, estresse e espionagem de alto nível.</span>
-                            </span>
-                        </label>
+                <div class="creator-controls">
+                    
+                    <div class="creator-section">
+                        <h3 class="section-title">1. Gênero</h3>
+                        <div class="button-group">
+                            <label>
+                                <input type="radio" name="gender" value="masculino" class="radio-input" onchange="updateVisuals()">
+                                <span class="tactical-btn">Masculino</span>
+                            </label>
+                            <label>
+                                <input type="radio" name="gender" value="feminino" class="radio-input" checked onchange="updateVisuals()">
+                                <span class="tactical-btn">Feminino</span>
+                            </label>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Atributos -->
-                <div class="creator-section">
-                    <h3>2. Atributos Iniciais <span class="highlight">(Pontos Restantes: <span id="attr-points">7</span>)</span></h3>
-                    <p style="font-size: 12px; margin-bottom: 10px; color: #888;">Mínimo: 3 | Máximo: 6</p>
-                    <div class="attributes-grid">
+                    <div class="creator-section">
+                        <h3 class="section-title">2. Caminho de Vida (Lifepath)</h3>
+                        <div class="button-group">
+                            <button class="tactical-btn active" onclick="setLifepath(this, 'nômade')">Nômade</button>
+                            <button class="tactical-btn" onclick="setLifepath(this, 'marginal')">Marginal</button>
+                            <button class="tactical-btn" onclick="setLifepath(this, 'corporativo')">Corporativo</button>
+                        </div>
+                    </div>
+
+                    <div class="creator-section">
+                        <h3 class="section-title">3. Atributos Iniciais 
+                            <span class="point-counter">Pontos restantes: <span id="attribute-points">7</span></span>
+                        </h3>
                         
                         <div class="attr-row">
-                            <span class="attr-name">Corpo</span>
-                            <div class="attr-controls">
-                                <button class="btn-attr" onclick="changeStat('body', -1)">-</button>
-                                <span class="attr-value" id="val-body">3</span>
-                                <button class="btn-attr" onclick="changeStat('body', 1)">+</button>
+                            <span class="attr-label">Corpo</span>
+                            <span class="attr-value" id="val-corpo">3</span>
+                            <div class="slider-container">
+                                <button class="btn-minus" onclick="changeStat('corpo', -1)">-</button>
+                                <input type="range" id="slider-corpo" class="attr-slider" min="3" max="20" value="3" oninput="updateStat('corpo', this.value)">
+                                <button class="btn-plus" onclick="changeStat('corpo', 1)">+</button>
                             </div>
                         </div>
 
                         <div class="attr-row">
-                            <span class="attr-name">Reflexos</span>
-                            <div class="attr-controls">
-                                <button class="btn-attr" onclick="changeStat('ref', -1)">-</button>
-                                <span class="attr-value" id="val-ref">3</span>
-                                <button class="btn-attr" onclick="changeStat('ref', 1)">+</button>
+                            <span class="attr-label">Reflexos</span>
+                            <span class="attr-value" id="val-reflexos">3</span>
+                            <div class="slider-container">
+                                <button class="btn-minus" onclick="changeStat('reflexos', -1)">-</button>
+                                <input type="range" id="slider-reflexos" class="attr-slider" min="3" max="20" value="3" oninput="updateStat('reflexos', this.value)">
+                                <button class="btn-plus" onclick="changeStat('reflexos', 1)">+</button>
                             </div>
                         </div>
 
                         <div class="attr-row">
-                            <span class="attr-name">Habilidade Técnica</span>
-                            <div class="attr-controls">
-                                <button class="btn-attr" onclick="changeStat('tech', -1)">-</button>
-                                <span class="attr-value" id="val-tech">3</span>
-                                <button class="btn-attr" onclick="changeStat('tech', 1)">+</button>
+                            <span class="attr-label">Habilidade Técnica</span>
+                            <span class="attr-value" id="val-tech">3</span>
+                            <div class="slider-container">
+                                <button class="btn-minus" onclick="changeStat('tech', -1)">-</button>
+                                <input type="range" id="slider-tech" class="attr-slider" min="3" max="20" value="3" oninput="updateStat('tech', this.value)">
+                                <button class="btn-plus" onclick="changeStat('tech', 1)">+</button>
                             </div>
                         </div>
 
                         <div class="attr-row">
-                            <span class="attr-name">Inteligência</span>
-                            <div class="attr-controls">
-                                <button class="btn-attr" onclick="changeStat('int', -1)">-</button>
-                                <span class="attr-value" id="val-int">3</span>
-                                <button class="btn-attr" onclick="changeStat('int', 1)">+</button>
+                            <span class="attr-label">Inteligência</span>
+                            <span class="attr-value" id="val-inteligencia">3</span>
+                            <div class="slider-container">
+                                <button class="btn-minus" onclick="changeStat('inteligencia', -1)">-</button>
+                                <input type="range" id="slider-inteligencia" class="attr-slider" min="3" max="20" value="3" oninput="updateStat('inteligencia', this.value)">
+                                <button class="btn-plus" onclick="changeStat('inteligencia', 1)">+</button>
                             </div>
                         </div>
 
                         <div class="attr-row">
-                            <span class="attr-name">Frieza</span>
-                            <div class="attr-controls">
-                                <button class="btn-attr" onclick="changeStat('cool', -1)">-</button>
-                                <span class="attr-value" id="val-cool">3</span>
-                                <button class="btn-attr" onclick="changeStat('cool', 1)">+</button>
+                            <span class="attr-label">Frieza</span>
+                            <span class="attr-value" id="val-frieza">3</span>
+                            <div class="slider-container">
+                                <button class="btn-minus" onclick="changeStat('frieza', -1)">-</button>
+                                <input type="range" id="slider-frieza" class="attr-slider" min="3" max="20" value="3" oninput="updateStat('frieza', this.value)">
+                                <button class="btn-plus" onclick="changeStat('frieza', 1)">+</button>
                             </div>
                         </div>
+                    </div>
 
+                    <div class="creator-section">
+                        <h3 class="section-title">4. Estilo e Ciberware</h3>
+                        <div class="button-group">
+                            <button class="tactical-btn active" onclick="setStyle(this, 'tactical')">Tactical</button>
+                            <button class="tactical-btn" onclick="setStyle(this, 'kitsch')">Kitsch</button>
+                            <button class="tactical-btn" onclick="setStyle(this, 'neomilitarismo')">Neo-Militar</button>
+                            <button class="tactical-btn" onclick="setStyle(this, 'pascivergio')">Pascivergio</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Aparência / Estilo -->
-                <div class="creator-section">
-                    <h3>3. Estilo e Ciberware</h3>
-                    <div class="style-options">
-                        <label>Estilo Visual:</label>
-                        <select id="v-style" class="cp-select">
-                            <option value="Kitsch">Kitsch (Neon, Cores Berrantes)</option>
-                            <option value="Entropismo">Entropismo (Prático, Desgastado)</option>
-                            <option value="Neomilitarismo">Neomilitarismo (Tático, Preto e Liso)</option>
-                            <option value="Neokitsch">Neokitsch (Luxo Corporativo Extremo)</option>
-                        </select>
-
-                        <label style="margin-top: 15px;">Ciberware Facial:</label>
-                        <select id="v-cyberware" class="cp-select">
-                            <option value="Nenhum (Orgânico)">Nenhum (Visual Orgânico)</option>
-                            <option value="Linhas Subdérmicas">Linhas Subdérmicas Simples</option>
-                            <option value="Óticas Kiroshi Aparentes">Óticas Kiroshi Aparentes</option>
-                            <option value="Placas Metálicas">Placas Metálicas na Mandíbula</option>
-                        </select>
+                <div class="visual-panel">
+                    <h2 class="visual-title">Visual do Mercenário // Vista Prévia Atual</h2>
+                    
+                    <div class="main-v-view">
+                        <img id="main-v-image" src="" alt="Vista Prévia de V" class="main-v-image">
+                        <div class="visual-placeholder" style="border: 2px solid var(--cp-red);">
+                            V PRINCIPAL: [ feminimo // tactical ]<br>
+                            (Substitua o arquivo de imagem)
+                        </div>
                     </div>
-                </div>
 
-                <button class="btn-action" style="width: 100%; margin-top: 20px;" onclick="generateID()">IMPRIMIR IDENTIDADE MERCENÁRIA</button>
-
-                <!-- Saída da Identidade -->
-                <div id="v-id-card" class="id-card" style="display: none;">
-                    <!-- O JS vai injetar os dados aqui -->
+                    <div class="thumbnails-grid">
+                        <div class="thumb-box">
+                            <img id="thumb-male" src="" alt="Prévia Masculina" class="thumb-image">
+                            <div class="visual-placeholder">BASE MASC</div>
+                        </div>
+                        <div class="thumb-box">
+                            <img id="thumb-kitsch" src="" alt="Prévia Estilo Kitsch" class="thumb-image">
+                            <div class="visual-placeholder" style="background-color: var(--cp-magenta); color: #000;">KITSCH<br>STYLE</div>
+                        </div>
+                        <div class="thumb-box">
+                            <img id="thumb-cyber" src="" alt="Prévia Ciberware" class="thumb-image">
+                            <div class="visual-placeholder" style="background-color: var(--cp-gray-light);">CYBER<br>MANDÍBULA</div>
+                        </div>
+                        <div class="thumb-box">
+                            <div class="visual-placeholder">DADOS VISUAIS ADICIONAIS</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
