@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SO do Terminal de Night City // v3.0</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <h1>Sub-rede da NCPD // Acesso Não Autorizado</h1>
+        <p>Usuário: V // Status: ATIVO</p>
+    </header>
+
+    <nav>
+        <button class="tab-btn active" onclick="openTab('minigame')">Quebra-Gelo</button>
+        <button class="tab-btn" onclick="openTab('rpg')">RPG de Texto</button>
+        <button class="tab-btn" onclick="openTab('wiki')">Wiki Corporativa</button>
+        <button class="tab-btn" onclick="openTab('novel')">Arquivo de Texto</button>
+        <button class="tab-btn" onclick="openTab('misc')">Diversos</button>
+    </nav>
+
+    <main>
+        <!-- ABA DO MINIGAME (BREACH PROTOCOL) -->
+        <section id="minigame" class="tab-content active">
+            <h2>Protocolo de Invasão</h2>
+            <p>Selecione os códigos na matriz para corresponder à sequência do Daemon. Alternando entre Linhas e Colunas.</p>
+            
+            <div class="breach-container">
+                <div class="breach-panel">
+                    <h3>Sequência do Daemon</h3>
+                    <div id="target-sequence" class="sequence-box"></div>
+                    
+                    <h3>Seu Buffer (<span id="buffer-count">0</span>/5)</h3>
+                    <div id="player-buffer" class="sequence-box"></div>
+                </div>
+                
+                <div class="matrix-container">
+                    <h3>Matriz de Código</h3>
+                    <div id="matrix-grid" class="matrix-grid"></div>
+                </div>
+            </div>
+            
+            <button class="btn-action" onclick="initBreach()">Reiniciar Conexão</button>
+        </section>
+
+        <!-- ABA DO RPG DE TEXTO -->
+        <section id="rpg" class="tab-content">
+            <h2>Serviço: O Pacote de Neon</h2>
+            <div id="rpg-terminal">
+                <!-- O texto do RPG vai aparecer aqui via JS -->
+            </div>
+            <div id="rpg-controls">
+                <!-- Os botões do RPG vão aparecer aqui via JS -->
+            </div>
+        </section>
+
+        <!-- ABA DA WIKI (EXPANDIDA) -->
+        <section id="wiki" class="tab-content">
+            <h2>Banco de Dados da Cidade</h2>
+            <p>Acesse as informações das principais potências de Night City. Insira os dados visuais quando disponíveis.</p>
+
+            <h3 class="wiki-category-title">Megacorporações</h3>
+            <div class="wiki-grid">
+                <!-- Card Arasaka -->
+                <div class="wiki-card">
+                    <img src="" alt="Logo da Arasaka" class="wiki-image">
+                    <div class="wiki-info">
+                        <h4>Arasaka</h4>
+                        <p class="wiki-sub">Sede: Tóquio, Japão</p>
+                        <p>Fria, implacável e altamente disciplinada. Dominam o mercado de segurança corporativa, serviços bancários e ciberware de alto padrão. Possuem um exército particular que rivaliza com nações inteiras.</p>
+                    </div>
+                </div>
+
+                <!-- Card Militech -->
+                <div class="wiki-card">
+                    <img src="" alt="Logo da Militech" class="wiki-image">
+                    <div class="wiki-info">
+                        <h4>Militech</h4>
+                        <p class="wiki-sub">Sede: Washington D.C., NUSA</p>
+                        <p>Agressiva e patriótica. É a principal fabricante de armas e veículos militares pesados do mundo, além de fornecer a maior força mercenária do planeta. Rivais mortais da Arasaka.</p>
+                    </div>
+                </div>
+
+                <!-- Card Kang Tao -->
+                <div class="wiki-card">
+                    <img src="" alt="Logo da Kang Tao" class="wiki-image">
+                    <div class="wiki-info">
+                        <h4>Kang Tao</h4>
+                        <p class="wiki-sub">Sede: Shenyang, China</p>
+                        <p>Uma corporação em ascensão meteórica que revolucionou a guerra urbana ao dominar a tecnologia de Armas Inteligentes (balas teleguiadas). Estão sempre em busca da próxima grande inovação.</p>
+                    </div>
+                </div>
+
+                <!-- Card Trauma Team -->
+                <div class="wiki-card">
+                    <img src="" alt="Logo do Trauma Team" class="wiki-image">
+                    <div class="wiki-info">
+                        <h4>Trauma Team Int.</h4>
+                        <p class="wiki-sub">Sede: Seattle, NUSA</p>
+                        <p>Serviços médicos paramilitares premium. Se o seu biomonitor apitar e você tiver um plano Platinum, eles descerão de AV atirando em qualquer um no caminho para te extrair com vida.</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="wiki-category-title">Gangues de Night City</h3>
+            <div class="wiki-grid">
+                <!-- Card Maelstrom -->
+                <div class="wiki-card">
+                    <img src="" alt="Membro do Maelstrom" class="wiki-image">
+                    <div class="wiki-info">
+                        <h4>Maelstrom</h4>
+                        <p class="wiki-sub">Território: Watson (Zona Industrial)</p>
+                        <p>Viciados em modificações cibernéticas ilegais e extremas. Eles perdem a própria humanidade trocando rostos por óticas cromadas maciças. Imprevisíveis, violentos e obcecados pelo ocultismo da Rede.</p>
+                    </div>
+                </div>
+
+                <!-- Card Tyger Claws -->
+                <div class="wiki-card">
+                    <img src="" alt="Membro dos Tyger Claws" class="wiki-image">
+                    <div class="wiki-info">
+                        <h4>Tyger Claws</h4>
+                        <p class="wiki-sub">Território: Westbrook / Japantown</p>
+                        <p>Gangue com raízes na Yakuza, apoiada silenciosamente pela Arasaka. Dominam o entretenimento noturno, cassinos e braindances ilegais. Preferem katanas, motos velozes e tatuagens luminosas.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- ABA DO CONTO -->
+        <section id="novel" class="tab-content">
+            <h2>Fragmento de Dados: Chuva Ácida sobre Watson</h2>
+            <div class="text-box">
+                <p>O brilho de neon do mercado de Kabuki sangrava nas poças d'água, transformando o beco imundo em um caleidoscópio de cores sintéticas. V encostou-se em uma máquina de vendas enferrujada, o revestimento cromado do braço esquerdo estalando suavemente enquanto flexionava os dedos. A chuva sintética cheirava a ozônio e macarrão barato.</p>
+                <br>
+                <p>"Você está atrasado", disse V, sem levantar os olhos quando uma sombra se destacou da penumbra.</p>
+                <br>
+                <p>"O trânsito em Glen estava um pesadelo", resmungou o canal, entrando na luz fraca de um letreiro piscante da <em>Nicola</em>. Ele usava um sobretudo que parecia ter sobrevivido à Quarta Guerra Corporativa, e seus implantes ópticos brilhavam em um vermelho fraco e sinistro. Ele jogou um fragmento de dados corrompido na mão estendida de V. "Tudo o que você precisa sobre o comboio da Militech está aí. Você tem duas horas antes que eles cruzem a ponte."</p>
+                <br>
+                <p>V conectou o fragmento em sua porta neural. Um solavanco de dados frios correu por trás de seus olhos—plantas baixas, rotas de patrulha e escalas de guardas. Um sorriso sombrio tocou os lábios de V. "Duas horas? É tempo mais que suficiente para causar um pouco de caos."</p>
+            </div>
+        </section>
+
+        <!-- ABA DE DIVERSOS -->
+        <section id="misc" class="tab-content">
+            <h2>Kit de Sobrevivência</h2>
+            
+            <div class="text-box">
+                <h3 class="highlight">A Receita do "Jackie Welles" (Vida Real)</h3>
+                <br>
+                <ul>
+                    <li><span>60ml de Vodka</span></li>
+                    <li><span>30ml de Cerveja de Gengibre (Ginger Beer)</span></li>
+                    <li><span>Um toque de Suco de Limão</span></li>
+                    <li><span><em>Mexa com gelo, sirva em um copo Old Fashioned. Um brinde a uma lenda.</em></span></li>
+                </ul>
+            </div>
+
+            <div class="text-box">
+                <h3 class="highlight">Glossário das Ruas</h3>
+                <br>
+                <ul>
+                    <li><strong>Choom / Choomba:</strong> <span>Um amigo ou parceiro.</span></li>
+                    <li><strong>Gonk:</strong> <span>Um idiota; alguém que faz uma burrice enorme.</span></li>
+                    <li><strong>Nova/Preem:</strong> <span>Extremamente legal ou excelente (de "premium").</span></li>
+                    <li><strong>Apagar (Flatline):</strong> <span>Morrer, ou matar alguém.</span></li>
+                    <li><strong>Eddie:</strong> <span>Eurodólar (Euro$), a moeda global de Night City.</span></li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

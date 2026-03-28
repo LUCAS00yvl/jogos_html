@@ -1,0 +1,309 @@
+/* Variáveis CSS para o Tema Cyberpunk */
+:root {
+    --cp-yellow: #fce100;
+    --cp-cyan: #00f0ff;
+    --cp-red: #ff003c;
+    --cp-dark: #0b0b0c;
+    --cp-gray: #1a1a1c;
+    --cp-text: #d1d1d1;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+body {
+    background-color: var(--cp-dark);
+    color: var(--cp-text);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* Cabeçalho */
+header {
+    background-color: var(--cp-yellow);
+    color: var(--cp-dark);
+    padding: 20px;
+    text-transform: uppercase;
+    border-bottom: 4px solid var(--cp-cyan);
+}
+
+h1 {
+    font-weight: 900;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+}
+
+/* Abas de Navegação */
+nav {
+    display: flex;
+    background-color: var(--cp-gray);
+    border-bottom: 2px solid var(--cp-red);
+}
+
+nav button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--cp-cyan);
+    padding: 15px;
+    font-size: 16px;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+nav button:hover, nav button.active {
+    background-color: var(--cp-red);
+    color: white;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+}
+
+/* Área de Conteúdo Principal */
+main {
+    padding: 30px;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+h2 {
+    color: var(--cp-cyan);
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    border-left: 5px solid var(--cp-red);
+    padding-left: 10px;
+}
+
+/* Protocolo de Invasão (Breach Protocol) */
+.breach-container {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+
+.breach-panel {
+    flex: 1;
+    min-width: 250px;
+}
+
+.breach-panel h3, .matrix-container h3 {
+    color: var(--cp-yellow);
+    font-size: 14px;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+.sequence-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    min-height: 42px;
+}
+
+.hex-code {
+    font-size: 18px;
+    font-weight: bold;
+    padding: 8px 12px;
+    background: var(--cp-dark);
+    border: 1px solid var(--cp-cyan);
+    color: var(--cp-text);
+}
+
+.hex-code.matched {
+    color: var(--cp-dark);
+    background: var(--cp-cyan);
+}
+
+.matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+    background: var(--cp-gray);
+    padding: 10px;
+    border: 2px solid var(--cp-red);
+    width: max-content;
+}
+
+.matrix-cell {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: default;
+    color: var(--cp-text);
+    font-weight: bold;
+    transition: all 0.2s;
+}
+
+/* Destaca a linha ou coluna ativa */
+.matrix-cell.active-track {
+    background: rgba(0, 240, 255, 0.1);
+}
+
+/* Mostra onde o jogador pode clicar */
+.matrix-cell.selectable {
+    cursor: pointer;
+    color: var(--cp-cyan);
+}
+
+.matrix-cell.selectable:hover {
+    background: var(--cp-cyan);
+    color: var(--cp-dark);
+}
+
+/* Células já clicadas ficam apagadas */
+.matrix-cell.used {
+    opacity: 0.1;
+    pointer-events: none;
+}
+
+/* --- Estilos da Wiki Expandida --- */
+.wiki-category-title {
+    color: var(--cp-yellow);
+    margin: 30px 0 15px 0;
+    font-size: 22px;
+    border-bottom: 2px dashed var(--cp-red);
+    padding-bottom: 5px;
+}
+
+.wiki-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.wiki-card {
+    background-color: var(--cp-gray);
+    border: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.wiki-card:hover {
+    border-color: var(--cp-cyan);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+    transform: translateY(-5px);
+}
+
+.wiki-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    background-color: #000; /* Fundo escuro caso a imagem não carregue */
+    border-bottom: 2px solid var(--cp-red);
+    position: relative;
+}
+
+/* Pseudo-elemento para indicar onde a imagem vai quando está vazia */
+.wiki-image[src=""]::after {
+    content: 'DADOS VISUAIS AUSENTES // INSERIR IMG';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: repeating-linear-gradient(45deg, #111, #111 10px, #000 10px, #000 20px);
+    color: var(--cp-red);
+    font-size: 12px;
+    text-align: center;
+    padding: 20px;
+}
+
+.wiki-info {
+    padding: 15px;
+}
+
+.wiki-info h4 {
+    color: var(--cp-cyan);
+    font-size: 20px;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.wiki-sub {
+    color: #888;
+    font-size: 12px;
+    margin-bottom: 15px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.wiki-info p {
+    font-size: 14px;
+    color: var(--cp-text);
+}
+
+/* Caixas de Texto (Conto/Misc) */
+.text-box {
+    background-color: var(--cp-gray);
+    padding: 20px;
+    border-left: 4px solid var(--cp-yellow);
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.highlight { color: var(--cp-yellow); }
+
+/* Terminal do RPG de Texto */
+#rpg-terminal {
+    background-color: #000;
+    border: 1px solid var(--cp-red);
+    padding: 20px;
+    height: 400px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    box-shadow: inset 0 0 20px rgba(255,0,60,0.2);
+}
+
+.rpg-log { margin-bottom: 15px; }
+.rpg-sys { color: var(--cp-yellow); font-weight: bold; }
+.rpg-desc { color: #fff; }
+
+#rpg-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.rpg-btn {
+    background-color: var(--cp-gray);
+    color: var(--cp-cyan);
+    border: 1px solid var(--cp-cyan);
+    padding: 10px;
+    cursor: pointer;
+    flex: 1;
+    min-width: 150px;
+    text-transform: uppercase;
+}
+
+.rpg-btn:hover {
+    background-color: var(--cp-cyan);
+    color: var(--cp-dark);
+}
+
+/* Listas Diversas */
+ul { list-style-type: square; margin-left: 20px; margin-bottom: 20px; color: var(--cp-cyan); }
+ul span { color: var(--cp-text); }
