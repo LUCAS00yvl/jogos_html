@@ -19,6 +19,15 @@
     
     /* Tipografia */
     --cp-font: 'Share Tech Mono', 'Courier New', Courier, monospace;
+
+    --scanline-overlay: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0) 50%,
+    rgba(0, 0, 0, 0.2) 50%,
+    rgba(0, 0, 0, 0.2)
+  );
+
 }
 
 * {
@@ -31,9 +40,29 @@
 body {
     background-color: var(--cp-background);
     color: var(--cp-text);
-    line-height: 1.6;
+    /* ... suas propriedades existentes ... */
+    
+    /* Efeito de Scanline Global */
+    background-image: var(--scanline-overlay);
+    background-size: 100% 4px;
+    position: relative;
     overflow-x: hidden;
-    padding: 20px;
+}
+
+/* Efeito de Tremor de Tela (Screen Shake) para falhas */
+@keyframes screen-shake {
+    0% { transform: translate(0, 0); }
+    10% { transform: translate(2px, -2px); }
+    30% { transform: translate(-2px, 2px); }
+    50% { transform: translate(3px, 3px); }
+    70% { transform: translate(-3px, -3px); }
+    90% { transform: translate(2px, -2px); }
+    100% { transform: translate(0, 0); }
+}
+
+.glitch-shake {
+    animation: screen-shake 0.2s;
+    animation-iteration-count: 2;
 }
 
 h1, h2, h3, h4 {
@@ -486,4 +515,108 @@ ul span { color: var(--cp-text); }
     font-size: 12px;
     text-align: center;
     padding: 10px;
+}
+
+/* =========================================
+   ESTILOS DO CANVAS PROCEDURAL (PIP-BOY)
+   ========================================= */
+#pipboy-canvas {
+    width: 100%;
+    height: 100%;
+    background-color: #050505; /* Fundo quase preto */
+    border-radius: 5px;
+    box-shadow: inset 0 0 20px rgba(0, 240, 255, 0.2);
+}
+
+/* Efeito de linhas de varredura (CRT) */
+.scanlines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0),
+        rgba(255, 255, 255, 0) 50%,
+        rgba(0, 0, 0, 0.2) 50%,
+        rgba(0, 0, 0, 0.2)
+    );
+    background-size: 100% 4px;
+    pointer-events: none; /* Deixa os cliques passarem direto */
+    z-index: 10;
+}
+
+/* Estilos para os Menus de Ciberware (Selects) */
+.cp-select {
+    width: 100%; 
+    padding: 10px; 
+    background: var(--cp-gray-dark);
+    color: var(--cp-cyan); 
+    border: 1px solid var(--cp-border-dark);
+    font-family: var(--cp-font); 
+    font-size: 0.85rem; 
+    outline: none; 
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cp-select:hover, .cp-select:focus { 
+    border-color: var(--cp-cyan); 
+    background: var(--cp-gray);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+}
+
+.cp-select option {
+    background: var(--cp-background);
+    color: var(--cp-text);
+}
+
+.vital-monitor {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 0.75rem;
+    color: var(--cp-text-muted);
+    font-family: var(--cp-font);
+    background: rgba(0,0,0,0.5);
+    padding: 2px 5px;
+    pointer-events: none;
+    z-index: 15;
+}
+
+.wiki-data-stream {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background: var(--cp-gray-dark);
+    padding: 10px;
+    margin-bottom: 20px;
+    border: 1px dashed var(--cp-cyan);
+    font-size: 0.8rem;
+    font-family: var(--cp-font);
+    color: var(--cp-cyan);
+}
+
+.stream-visual {
+    flex: 1;
+    height: 30px;
+    display: flex;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.stream-bar {
+    width: 3px;
+    background-color: var(--cp-cyan);
+    height: 100%;
+    transform-origin: bottom;
+    animation: stream-flow 2s infinite linear;
+}
+
+@keyframes stream-flow {
+    0% { transform: scaleY(0.2); }
+    50% { transform: scaleY(1); }
+    100% { transform: scaleY(0.2); }
 }

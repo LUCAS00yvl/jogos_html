@@ -1,4 +1,34 @@
-// --- LÓGICA DAS ABAS DE NAVEGAÇÃO ---
+// ==========================================
+// --- SISTEMA DE ÁUDIO WEB PROCEDURAL ---
+// ==========================================
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(frequency, type = 'sine', duration = 0.1) {
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.type = type;
+    oscillator.frequency.value = frequency; 
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime); // Volume
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration); // Fade out
+
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + duration);
+}
+
+const sounds = {
+    hexSelect: () => playSound(800, 'square', 0.05), // Bip curto e agudo
+    matched: () => { playSound(1200, 'sine', 0.1); setTimeout(() => playSound(1600, 'sine', 0.1), 50); }, // Arpejo
+    error: () => playSound(100, 'sawtooth', 0.3) // Grave e ruidoso
+};
+
+
+// ==========================================
+// 1. LÓGICA DAS ABAS DE NAVEGAÇÃO
+// ==========================================
 function openTab(tabId) {
     const contents = document.querySelectorAll('.tab-content');
     const buttons = document.querySelectorAll('.tab-btn');
@@ -10,82 +40,57 @@ function openTab(tabId) {
     event.target.classList.add('active');
 }
 
-// --- LÓGICA DO MINIGAME PROTOCOLO DE INVASÃO ---
+
+// ==========================================
+// 2. LÓGICA DO MINIGAME BREACH
+// ==========================================
 const hexValues = ['1C', '55', 'BD', 'E9', 'FF', '7A'];
-let matrix = [];
-let targetSeq = [];
-let playerSeq = [];
-let isRow = true; // Começa sempre pela primeira linha (índice 0)
-let activeIndex = 0;
-const matrixSize = 5;
-const bufferSize = 5;
-let gameActiveBP = true;
+let matrix = []; let targetSeq = []; let playerSeq = []; let isRow = true; let activeIndex = 0;
+const matrixSize = 5; const bufferSize = 5; let gameActiveBP = true;
 
 function initBreach() {
-    gameActiveBP = true;
-    playerSeq = [];
-    isRow = true;
-    activeIndex = 0; // Linha 0
+    gameActiveBP = true; playerSeq = []; isRow = true; activeIndex = 0; 
     document.getElementById('buffer-count').innerText = 0;
-    
-    generateMatrix();
-    generateTarget();
-    renderMatrix();
-    updateBuffer();
+    generateMatrix(); generateTarget(); renderMatrix(); updateBuffer();
 }
 
 function generateMatrix() {
-    matrix = [];
+    matrix = []; 
     for(let i = 0; i < matrixSize; i++) {
-        let row = [];
-        for(let j = 0; j < matrixSize; j++) {
-            row.push(hexValues[Math.floor(Math.random() * hexValues.length)]);
+        let row = []; 
+        for(let j = 0; j < matrixSize; j++) { 
+            row.push(hexValues[Math.floor(Math.random() * hexValues.length)]); 
         }
         matrix.push(row);
     }
 }
 
 function generateTarget() {
-    targetSeq = [];
-    // Gera uma sequência de 3 códigos para o jogador tentar acertar
-    for(let i = 0; i < 3; i++) {
-        targetSeq.push(hexValues[Math.floor(Math.random() * hexValues.length)]);
+    targetSeq = []; 
+    for(let i = 0; i < 3; i++) { 
+        targetSeq.push(hexValues[Math.floor(Math.random() * hexValues.length)]); 
     }
     const targetDiv = document.getElementById('target-sequence');
     targetDiv.innerHTML = targetSeq.map(code => `<div class="hex-code">${code}</div>`).join('');
 }
 
 function renderMatrix() {
-    const grid = document.getElementById('matrix-grid');
-    grid.innerHTML = '';
-    
+    const grid = document.getElementById('matrix-grid'); grid.innerHTML = '';
     for(let i = 0; i < matrixSize; i++) {
         for(let j = 0; j < matrixSize; j++) {
-            const cell = document.createElement('div');
-            cell.className = 'matrix-cell';
+            const cell = document.createElement('div'); cell.className = 'matrix-cell';
             cell.innerText = matrix[i][j];
-
-            if (matrix[i][j] === '') {
-                // Se estiver vazio, significa que já foi clicado
-                cell.classList.add('used');
-                cell.innerText = '[]';
+            if (matrix[i][j] === '') { 
+                cell.classList.add('used'); cell.innerText = '[]';
             } else if (gameActiveBP) {
                 let isSelectable = false;
-                
-                // Define se a célula está na trilha ativa (linha ou coluna)
-                if (isRow && i === activeIndex) {
-                    isSelectable = true;
-                    cell.classList.add('active-track');
-                } else if (!isRow && j === activeIndex) {
-                    isSelectable = true;
-                    cell.classList.add('active-track');
+                if (isRow && i === activeIndex) { isSelectable = true; cell.classList.add('active-track'); }
+                else if (!isRow && j === activeIndex) { isSelectable = true; cell.classList.add('active-track'); }
+                if (isSelectable) { 
+                    cell.classList.add('selectable'); 
+                    cell.onclick = () => selectHex(i, j, matrix[i][j]); 
                 }
-
-                if (isSelectable) {
-                    cell.classList.add('selectable');
-                    cell.onclick = () => selectHex(i, j, matrix[i][j]);
-                }
-            }
+            } 
             grid.appendChild(cell);
         }
     }
@@ -93,258 +98,147 @@ function renderMatrix() {
 
 function selectHex(r, c, code) {
     if(!gameActiveBP) return;
+    
+    sounds.hexSelect(); // Toca som de seleção
 
     playerSeq.push(code);
-    matrix[r][c] = ''; // Esvazia a célula na matriz
-    
-    // Inverte a direção: se clicou na linha, o próximo clique tem que ser na coluna do item clicado
-    isRow = !isRow;
-    activeIndex = isRow ? r : c; 
-
-    updateBuffer();
-    checkBreachStatus();
-
+    matrix[r][c] = '';
+    isRow = !isRow; activeIndex = isRow ? r : c; updateBuffer(); checkBreachStatus();
     if(gameActiveBP) renderMatrix();
 }
 
 function updateBuffer() {
-    const bufferDiv = document.getElementById('player-buffer');
-    document.getElementById('buffer-count').innerText = playerSeq.length;
+    const bufferDiv = document.getElementById('player-buffer'); document.getElementById('buffer-count').innerText = playerSeq.length;
     bufferDiv.innerHTML = playerSeq.map(code => `<div class="hex-code">${code}</div>`).join('');
 }
 
 function checkBreachStatus() {
-    // Transforma as arrays em strings para facilitar a busca (ex: "1C,BD,55")
-    let pStr = playerSeq.join(',');
-    let tStr = targetSeq.join(',');
-
-    // Se a sequência alvo estiver contida dentro da sequência do jogador
+    let pStr = playerSeq.join(','); let tStr = targetSeq.join(',');
+    
     if (pStr.includes(tStr)) {
         gameActiveBP = false;
-        renderMatrix(); // Atualiza a tela uma última vez sem células selecionáveis
-        setTimeout(() => alert("DAEMON CARREGADO. Acesso Concedido ao Sistema!"), 150);
-    } 
-    // Se estourar o limite do buffer sem acertar
-    else if (playerSeq.length >= bufferSize) {
+        renderMatrix();
+        sounds.matched(); // Toca som de sucesso
+        setTimeout(() => alert("DAEMON CARREGADO. Acesso Concedido!"), 150);
+    } else if (playerSeq.length >= bufferSize) {
         gameActiveBP = false;
         renderMatrix();
-        setTimeout(() => alert("FALHA DE INVASÃO. O ICE corporativo te detectou."), 150);
+        sounds.error(); // Toca som de erro
+        setTimeout(() => alert("FALHA DE INVASÃO!"), 150);
     }
 }
 
-// Inicia o minigame automaticamente ao carregar a página
-window.onload = initBreach;
-// --- MOTOR DO RPG DE TEXTO ---
-const terminal = document.getElementById('rpg-terminal');
-const controls = document.getElementById('rpg-controls');
 
-// Máquina de Estados da História do RPG
+// ==========================================
+// 3. MOTOR DO RPG DE TEXTO E GLITCH
+// ==========================================
+const terminal = document.getElementById('rpg-terminal'); const controls = document.getElementById('rpg-controls');
+let systemErrorActive = false;
+
 const storyNodes = {
-    start: {
-        text: "CHAMADA RECEBIDA: REGINA JONES...\n\n'V, tenho um serviço pra você. Preciso que recupere uma maleta climatizada em um cassino dos Tyger Claws em Westbrook. O pagamento é 10 mil eddies. Faça isso na miúda, se puder.'\n\nVocê chega no beco do lado de fora. Qual é o seu equipamento pra essa corrida?",
-        choices: [
-            { text: "O Solo (Escopeta Carnage e Armadura Pesada)", next: "solo_approach" },
-            { text: "O Trilhas-Rede (Ciberdeque e Pistola com Silenciador)", next: "netrunner_approach" },
-            { text: "O Ninja (Camuflagem Óptica e Lâminas Louva-a-Deus)", next: "ninja_approach" }
-        ]
-    },
-    solo_approach: {
-        text: "Você engatilha sua escopeta Carnage. A armadura pesada traz uma sensação reconfortante. Dois seguranças Tyger Claw estão na porta, fumando cigarros sintéticos.",
-        choices: [
-            { text: "Chutar a porta e atirar neles", next: "solo_combat" },
-            { text: "Intimidá-los para irem embora", next: "solo_talk" }
-        ]
-    },
-    netrunner_approach: {
-        text: "Você se conecta a um ponto de acesso próximo. Você vê a sub-rede do cassino. Dois seguranças na porta, mas há uma câmera e uma máquina de vendas de NiCola perto deles.",
-        choices: [
-            { text: "Hackear a câmera para distraí-los", next: "netrunner_hack" },
-            { text: "Sobrecargar a máquina de vendas", next: "netrunner_distract" }
-        ]
-    },
-    ninja_approach: {
-        text: "Você ativa sua camuflagem óptica. O mundo tremeluz ao seu redor. Você sobe a escada de incêndio até uma janela aberta com vista para o salão principal do cassino.",
-        choices: [
-            { text: "Pular e executar o guarda lá embaixo", next: "ninja_stealth" },
-            { text: "Esgueirar-se pelas vigas do teto", next: "ninja_rafters" }
-        ]
-    },
-    // Finais da Demo
-    solo_combat: { text: "Você transforma os seguranças em névoa vermelha. O alarme dispara imediatamente. Adeus, 'fazer na miúda'. Hora de abrir caminho na bala pelo cassino inteiro. [CONTINUA...]", choices: [{ text: "Reiniciar Serviço", next: "start" }] },
-    solo_talk: { text: "Você flexiona seus Braços de Gorila e estala os nós dos dedos. Os seguranças dão uma olhada no seu cromo e decidem que não ganham o suficiente pra isso. Eles vão embora. Você está dentro. [CONTINUA...]", choices: [{ text: "Reiniciar Serviço", next: "start" }] },
-    netrunner_hack: { text: "Você coloca o feed da câmera em loop e aciona um alarme falso no beco dos fundos. Os seguranças correm para investigar, deixando a porta da frente escancarada. Suave. [CONTINUA...]", choices: [{ text: "Reiniciar Serviço", next: "start" }] },
-    netrunner_distract: { text: "A máquina de NiCola explode violentamente, banhando os seguranças em faíscas e xarope açucarado. Eles ficam atordoados, te dando uma brecha para passar despercebido. [CONTINUA...]", choices: [{ text: "Reiniciar Serviço", next: "start" }] },
-    ninja_stealth: { text: "Você cai como uma pedra, Lâminas Louva-a-Deus acionadas com um *snikt* letal. O guarda cai silenciosamente. Você agora está nas sombras do salão principal. [CONTINUA...]", choices: [{ text: "Reiniciar Serviço", next: "start" }] },
-    ninja_rafters: { text: "Você se move lentamente pelas vigas de aço. Abaixo de você, Tyger Claws estão contando eddies. Você avista a maleta em um escritório envidraçado do outro lado da sala. [CONTINUA...]", choices: [{ text: "Reiniciar Serviço", next: "start" }] }
+    start: { text: "CHAMADA RECEBIDA: REGINA JONES...\n\n'V, preciso que recupere uma maleta climatizada em um cassino Tyger Claws. O pagamento é 10 mil eddies. Faça na miúda.'\n\nQual é o seu equipamento?", choices: [ { text: "O Solo (Carnage e Armadura)", next: "solo_approach" }, { text: "O Trilhas-Rede (Ciberdeque e Pistola)", next: "netrunner_approach" }, { text: "O Ninja (Lâminas Louva-a-Deus)", next: "ninja_approach" } ] },
+    solo_approach: { text: "Engatilha a Carnage. Dois Tyger Claws estão na porta, fumando cigarros sintéticos.", choices: [ { text: "Chutar a porta e atirar", next: "solo_combat" }, { text: "Intimidá-los", next: "solo_talk" } ] },
+    netrunner_approach: { text: "Se conecta a um ponto próximo. Câmera e máquina de vendas NiCola perto deles.", choices: [ { text: "Hackear a câmera", next: "netrunner_hack" }, { text: "Sobrecargar a máquina de vendas", next: "netrunner_distract" } ] },
+    ninja_approach: { text: "Ativa a camuflagem óptica. Sobe a escada de incêndio até uma janela.", choices: [ { text: "Pular e executar o guarda", next: "ninja_stealth" }, { text: "Esgueirar-se pelas vigas", next: "ninja_rafters" } ] },
+    solo_combat: { text: "Os seguranças viram névoa vermelha. Alarme dispara. [CONTINUA...]", choices: [{ text: "Reiniciar", next: "start" }] },
+    solo_talk: { text: "Braços de Gorila estalam. Os seguranças decidem que não ganham o suficiente. [CONTINUA...]", choices: [{ text: "Reiniciar", next: "start" }] },
+    netrunner_hack: { text: "Coloca a câmera em loop. Alarme falso nos fundos. Porta livre. [CONTINUA...]", choices: [{ text: "Reiniciar", next: "start" }] },
+    netrunner_distract: { text: "A máquina de NiCola explode em faíscas e xarope. [CONTINUA...]", choices: [{ text: "Reiniciar", next: "start" }] },
+    ninja_stealth: { text: "Pula como uma pedra, Lâminas Louva-a-Deus *snikt*. Guarda cai silenciosamente. [CONTINUA...]", choices: [{ text: "Reiniciar", next: "start" }] },
+    ninja_rafters: { text: "Se move lentamente pelas vigas de aço. Avista a maleta. [CONTINUA...]", choices: [{ text: "Reiniciar", next: "start" }] }
 };
 
 function addLog(text, isSystem = false) {
-    const div = document.createElement('div');
-    div.className = 'rpg-log';
-    if(isSystem) {
-        div.innerHTML = `<span class="rpg-sys">[SISTEMA]</span> <span class="rpg-desc">${text}</span>`;
-    } else {
-        div.innerHTML = `<span class="rpg-desc">${text}</span>`;
+    if (systemErrorActive) return; // Se houver erro, para de logar
+
+    const div = document.createElement('div'); div.className = 'rpg-log';
+    if(isSystem) { div.innerHTML = `<span class="rpg-sys">[SISTEMA]</span> <span class="rpg-desc">${text}</span>`; }
+    else { div.innerHTML = `<span class="rpg-desc">${text}</span>`; }
+    
+    terminal.appendChild(div); 
+    terminal.scrollTop = terminal.scrollHeight; 
+    
+    // Chance de erro dinâmico (5%) ao adicionar log
+    if (Math.random() < 0.05 && storyNodes.current !== 'start') {
+        triggerSystemError();
     }
-    terminal.appendChild(div);
-    terminal.scrollTop = terminal.scrollHeight; // Rolar para baixo automaticamente
 }
 
 function renderNode(nodeId) {
-    controls.innerHTML = ''; // Limpar botões antigos
+    controls.innerHTML = ''; 
     const nodeData = storyNodes[nodeId];
-    
-    // Adicionar linha em branco para facilitar a leitura
     addLog("--------------------------------------------------", true);
+    const lines = nodeData.text.split('\n'); 
+    lines.forEach(line => { if(line.trim() !== '') addLog(line); });
     
-    // Simulação de efeito de máquina de escrever para o texto
-    const lines = nodeData.text.split('\n');
-    lines.forEach(line => {
-        if(line.trim() !== '') addLog(line);
-    });
-
-    // Gerar botões de escolha
     nodeData.choices.forEach(choice => {
-        const btn = document.createElement('button');
-        btn.className = 'rpg-btn';
-        btn.innerText = "> " + choice.text;
-        btn.onclick = () => renderNode(choice.next);
+        const btn = document.createElement('button'); btn.className = 'rpg-btn';
+        btn.innerText = "> " + choice.text; btn.onclick = () => renderNode(choice.next);
         controls.appendChild(btn);
     });
 }
 
-// Inicializar o RPG
-renderNode('start');
+function triggerSystemError() {
+    systemErrorActive = true;
+    controls.innerHTML = ''; // Limpa botões existentes
+    
+    terminal.classList.add('glitch-shake');
+    
+    addLog("--------------------------------------------------", true);
+    addLog("AVISO DE SISTEMA: DETECTADA ATIVIDADE SUSPEITA!", true);
+    addLog("--------------------------------------------------", true);
+    addLog("ALERTA: PROTOCOLO DE SEGURANÇA DA ARASAKA ATIVADO.", true);
+    addLog("ICE DE SEGURANÇA ESTÁ VARRENDO O TERMINAL...", true);
+    
+    setTimeout(() => {
+        terminal.classList.remove('glitch-shake');
+        
+        const btn = document.createElement('button');
+        btn.className = 'rpg-btn';
+        btn.innerText = "> REINICIAR CONEXÃO";
+        btn.onclick = recoverConnection;
+        controls.appendChild(btn);
+    }, 1000);
+}
 
-// --- LÓGICA DO CRIADOR DE PERSONAGEM (RIPPERDOC) ---
+function recoverConnection() {
+    systemErrorActive = false;
+    terminal.innerHTML = ''; // Limpa o log
+    renderNode('start'); // Reinicia a história
+    addLog("... CONEXÃO REESTABELECIDA COM REGINA JONES.", true);
+}
 
-// Status iniciais de V
-const stats = {
-    body: 3,
-    ref: 3,
-    tech: 3,
-    int: 3,
-    cool: 3
+
+// ==========================================
+// 4. LÓGICA DO CRIADOR E RIPPERDOC
+// ==========================================
+const currentSettings = { 
+    gender: 'feminino', 
+    lifepath: 'nômade', 
+    implants: { os: 'cyberdeck', eyes: 'kiroshi_base', arms: 'org', legs: 'org' }
 };
-
-let availablePoints = 7;
-const MIN_STAT = 3;
-const MAX_STAT = 6;
-
-function changeStat(statKey, delta) {
-    const currentValue = stats[statKey];
-    
-    // Tentando Aumentar
-    if (delta > 0) {
-        if (availablePoints > 0 && currentValue < MAX_STAT) {
-            stats[statKey]++;
-            availablePoints--;
-        }
-    } 
-    // Tentando Diminuir
-    else if (delta < 0) {
-        if (currentValue > MIN_STAT) {
-            stats[statKey]--;
-            availablePoints++;
-        }
-    }
-    
-    updateCreatorUI();
-}
-
-function updateCreatorUI() {
-    // Atualiza os números na tela
-    document.getElementById('val-body').innerText = stats.body;
-    document.getElementById('val-ref').innerText = stats.ref;
-    document.getElementById('val-tech').innerText = stats.tech;
-    document.getElementById('val-int').innerText = stats.int;
-    document.getElementById('val-cool').innerText = stats.cool;
-    
-    // Atualiza os pontos restantes
-    const pointsDisplay = document.getElementById('attr-points');
-    pointsDisplay.innerText = availablePoints;
-    
-    // Muda a cor dos pontos se zerar
-    if (availablePoints === 0) {
-        pointsDisplay.style.color = 'var(--cp-red)';
-    } else {
-        pointsDisplay.style.color = 'var(--cp-yellow)';
-    }
-}
-
-function generateID() {
-    // Pega os valores selecionados
-    const lifepath = document.querySelector('input[name="lifepath"]:checked').value;
-    const style = document.getElementById('v-style').value;
-    const cyberware = document.getElementById('v-cyberware').value;
-    
-    const idCard = document.getElementById('v-id-card');
-    
-    // Constrói o HTML do Cartão
-    idCard.innerHTML = `
-        <div class="id-header">
-            <h3>REGISTRO DE MERCENÁRIO DA NCPD</h3>
-            <p style="color: #888; font-size: 12px;">STATUS: PROCURADO // NÍVEL DE AMEAÇA: ALTO</p>
-        </div>
-        <div class="id-data">
-            <p><strong>ALCUNHA:</strong> V</p>
-            <p><strong>CAMINHO DE VIDA:</strong> ${lifepath}</p>
-            <p><strong>ESTILO VISUAL:</strong> ${style}</p>
-            <p><strong>MODIFICAÇÃO FACIAL:</strong> ${cyberware}</p>
-            <br>
-            <p><strong>[ DADOS BIOMÉTRICOS / ATRIBUTOS ]</strong></p>
-            <ul style="list-style-type: none; margin-left: 0; margin-top: 10px;">
-                <li>CORPO: <span class="highlight">${stats.body}</span></li>
-                <li>REFLEXOS: <span class="highlight">${stats.ref}</span></li>
-                <li>HAB. TÉCNICA: <span class="highlight">${stats.tech}</span></li>
-                <li>INTELIGÊNCIA: <span class="highlight">${stats.int}</span></li>
-                <li>FRIEZA: <span class="highlight">${stats.cool}</span></li>
-            </ul>
-        </div>
-    `;
-    
-    idCard.style.display = 'block';
-    
-    // Rola a página para baixo para ver a identidade gerada
-    idCard.scrollIntoView({ behavior: 'smooth' });
-}
-
-// --- Lógica do Criador de Personagem (Ripperdoc) ---
-
-const currentSettings = {
-    gender: 'feminino',
-    lifepath: 'nômade',
-    style: 'tactical'
-};
+const stats = { points: 7, corpo: 3, reflexos: 3, tech: 3, inteligencia: 3, frieza: 3 };
 
 function updateVisuals() {
-    const gender = document.querySelector('input[name="gender"]:checked').value;
-    currentSettings.gender = gender;
-    const style = currentSettings.style;
-
-    const mainImg = document.getElementById('main-v-image');
-    const mainPlaceholder = document.querySelector('.main-v-view .visual-placeholder');
-    const thumbMale = document.getElementById('thumb-male');
-    
-    mainPlaceholder.innerHTML = `V PRINCIPAL: [ ${currentSettings.gender} // ${currentSettings.style} ]<br>(Substitua o arquivo de imagem)`;
-    mainPlaceholder.style.borderColor = (gender === 'masculino') ? 'var(--cp-yellow)' : 'var(--cp-red)';
-    
-    if (thumbMale && thumbMale.src) thumbMale.src = `images/thumb_male_${style}.png`;
+    const genderInput = document.querySelector('input[name="gender"]:checked');
+    if (genderInput) currentSettings.gender = genderInput.value;
+    drawProceduralDoll(); 
 }
 
 function setLifepath(element, lifepath) {
     const buttons = element.closest('.button-group').querySelectorAll('button');
     buttons.forEach(btn => btn.classList.remove('active'));
-    element.classList.add('active');
+    element.classList.add('active'); 
     currentSettings.lifepath = lifepath;
+    drawProceduralDoll(); 
 }
 
-function setStyle(element, style) {
-    const buttons = element.closest('.button-group').querySelectorAll('button');
-    buttons.forEach(btn => btn.classList.remove('active'));
-    element.classList.add('active');
-    currentSettings.style = style;
-    updateVisuals();
+function updateImplants() {
+    currentSettings.implants.os = document.getElementById('cw-os').value;
+    currentSettings.implants.eyes = document.getElementById('cw-eyes').value;
+    currentSettings.implants.arms = document.getElementById('cw-arms').value;
+    currentSettings.implants.legs = document.getElementById('cw-legs').value;
+    drawProceduralDoll();
 }
 
 function updateStatUI(statKey) {
@@ -355,34 +249,194 @@ function updateStatUI(statKey) {
 
 function changeStat(statKey, delta) {
     const currentValue = stats[statKey];
-    if (delta > 0 && stats.points > 0 && currentValue < 20) {
-        stats[statKey]++;
-        stats.points--;
-    } else if (delta < 0 && currentValue > 3) {
-        stats[statKey]--;
-        stats.points++;
-    }
+    if (delta > 0 && stats.points > 0 && currentValue < 20) { stats[statKey]++; stats.points--; }
+    else if (delta < 0 && currentValue > 3) { stats[statKey]--; stats.points++; }
+    
     updateStatUI(statKey);
+    
+    if (statKey === 'corpo') { 
+        drawProceduralDoll(); 
+        updateVitalMonitor(); 
+    }
 }
 
 function updateStat(statKey, newValue) {
-    const oldValue = stats[statKey];
-    const diff = newValue - oldValue;
-
-    if (diff > 0) {
-        if (stats.points >= diff) {
-            stats[statKey] = parseInt(newValue);
-            stats.points -= diff;
-        } else {
-            document.getElementById(`slider-${statKey}`).value = oldValue;
-            alert("Pontos de atributo insuficientes.");
-        }
-    } else if (diff < 0) {
-        stats[statKey] = parseInt(newValue);
-        stats.points += Math.abs(diff);
+    const oldValue = stats[statKey]; const diff = newValue - oldValue;
+    
+    if (diff > 0) { 
+        if (stats.points >= diff) { stats[statKey] = parseInt(newValue); stats.points -= diff; }
+        else { document.getElementById(`slider-${statKey}`).value = oldValue; alert("Pontos insuficientes."); } 
     }
+    else if (diff < 0) { stats[statKey] = parseInt(newValue); stats.points += Math.abs(diff); }
+    
     updateStatUI(statKey);
+    
+    if (statKey === 'corpo') { 
+        drawProceduralDoll(); 
+        updateVitalMonitor(); 
+    }
 }
 
-// Chamar no carregamento da página
-window.addEventListener('DOMContentLoaded', updateVisuals);
+function updateVitalMonitor() {
+    const heartRateSpan = document.getElementById('vitals-heartrate');
+    const stabilitySpan = document.getElementById('vitals-stability');
+    if (!heartRateSpan || !stabilitySpan) return;
+    
+    const heartRate = 90 - (stats.corpo * 2);
+    const stability = 50 + (stats.corpo * 2.5);
+    
+    heartRateSpan.innerText = heartRate;
+    stabilitySpan.innerText = Math.round(stability);
+}
+
+
+// ==========================================
+// 5. MOTOR PIP-BOY ISAAC // MODO RIPPERDOC
+// ==========================================
+function drawProceduralDoll() {
+    const canvas = document.getElementById('pipboy-canvas'); 
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = 'rgba(0, 240, 255, 0.1)'; ctx.lineWidth = 1;
+    for(let i = 0; i < canvas.width; i += 20) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke(); }
+    for(let i = 0; i < canvas.height; i += 20) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke(); }
+
+    const bodyStat = stats.corpo; 
+    const gender = currentSettings.gender;
+    const imps = currentSettings.implants; 
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+
+    const skinColor = '#00f0ff';     
+    const eyeColor = '#0b0b0c';      
+    const tearColor = '#ff003c';     
+    const metalColor = '#888888';
+    const neonOrange = '#ff8c00';
+
+    const headW = 80; const headH = 65; const headY = centerY - 50;
+    const beanW = 30 + (bodyStat * 2); 
+    const beanH = 45 + (bodyStat * 1.5);
+    const beanY = headY + 65;
+
+    ctx.shadowBlur = (imps.os === 'berserk') ? 25 : 0;
+    ctx.shadowColor = (imps.os === 'berserk') ? tearColor : 'transparent';
+
+    function drawSolidEllipse(x, y, radiusX, radiusY, fillStyle) {
+        ctx.fillStyle = fillStyle; ctx.beginPath();
+        ctx.ellipse(x, y, radiusX, radiusY, 0, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Camada Costas
+    if (imps.os === 'sandevistan') {
+        ctx.fillStyle = '#00ff00'; ctx.shadowBlur = 15; ctx.shadowColor = '#00ff00';
+        ctx.beginPath(); ctx.roundRect(centerX - 8, beanY - beanH + 10, 16, beanH * 1.5, 5); ctx.fill();
+        ctx.shadowBlur = 0; 
+    }
+
+    // Camada Pernas
+    let legW = 12; let legH = 10; let legColor = skinColor;
+    if (imps.legs === 'tendons') { legColor = metalColor; legH = 18; } 
+    if (imps.legs === 'ankles') { legColor = '#444'; legW = 18; legH = 15; } 
+
+    drawSolidEllipse(centerX - beanW*0.5, beanY + beanH*0.8, legW, legH, legColor);
+    drawSolidEllipse(centerX + beanW*0.5, beanY + beanH*0.8, legW, legH, legColor);
+
+    // Camada Corpo
+    drawSolidEllipse(centerX, beanY, beanW, beanH, skinColor);
+
+    // Camada Braços
+    let armW = 12; let armH = 18; let armColor = skinColor;
+    let armOffsetX = beanW + 5;
+    
+    if (imps.arms === 'gorilla') { armW = 22; armH = 25; armColor = metalColor; armOffsetX = beanW + 12; }
+    
+    drawSolidEllipse(centerX - armOffsetX, beanY, armW, armH, armColor);
+    drawSolidEllipse(centerX + armOffsetX, beanY, armW, armH, armColor);
+
+    if (imps.arms === 'mantis') {
+        ctx.fillStyle = metalColor; ctx.beginPath();
+        ctx.moveTo(centerX - armOffsetX - 5, beanY); ctx.lineTo(centerX - armOffsetX - 25, beanY + 30); ctx.lineTo(centerX - armOffsetX + 5, beanY + 15);
+        ctx.moveTo(centerX + armOffsetX + 5, beanY); ctx.lineTo(centerX + armOffsetX + 25, beanY + 30); ctx.lineTo(centerX + armOffsetX - 5, beanY + 15);
+        ctx.fill();
+    }
+    else if (imps.arms === 'monowire') {
+        ctx.strokeStyle = neonOrange; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = neonOrange;
+        ctx.beginPath();
+        ctx.moveTo(centerX - armOffsetX, beanY + armH); ctx.quadraticCurveTo(centerX - armOffsetX - 30, beanY + 40, centerX - armOffsetX - 10, beanY + 50);
+        ctx.moveTo(centerX + armOffsetX, beanY + armH); ctx.quadraticCurveTo(centerX + armOffsetX + 30, beanY + 40, centerX + armOffsetX + 10, beanY + 50);
+        ctx.stroke(); ctx.shadowBlur = 0;
+    }
+
+    // Camada Cabeça
+    drawSolidEllipse(centerX, headY, headW, headH, skinColor);
+
+    if (imps.os === 'cyberdeck') {
+        ctx.fillStyle = '#00ff7f'; ctx.shadowBlur = 10; ctx.shadowColor = '#00ff7f';
+        ctx.beginPath(); ctx.arc(centerX + headW - 5, headY - 10, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    // Camada Rosto
+    const eyeOffset = 35;
+    let eyeW = (gender === 'feminino') ? 20 : 18;
+    let eyeH = (gender === 'feminino') ? 25 : 28;
+
+    drawSolidEllipse(centerX - eyeOffset, headY + 5, eyeW, eyeH, eyeColor);
+    drawSolidEllipse(centerX + eyeOffset, headY + 5, eyeW, eyeH, eyeColor);
+
+    if (imps.eyes === 'kiroshi_thermo') {
+        ctx.strokeStyle = tearColor; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = tearColor;
+        ctx.beginPath();
+        ctx.moveTo(centerX - eyeOffset - 10, headY + 5); ctx.lineTo(centerX - eyeOffset + 10, headY + 5);
+        ctx.moveTo(centerX - eyeOffset, headY - 5); ctx.lineTo(centerX - eyeOffset, headY + 15);
+        ctx.moveTo(centerX + eyeOffset - 10, headY + 5); ctx.lineTo(centerX + eyeOffset + 10, headY + 5);
+        ctx.moveTo(centerX + eyeOffset, headY - 5); ctx.lineTo(centerX + eyeOffset, headY + 15);
+        ctx.stroke(); ctx.shadowBlur = 0;
+    } else {
+        drawSolidEllipse(centerX - eyeOffset + 5, headY - 5, 6, 8, '#ffffff');
+        drawSolidEllipse(centerX + eyeOffset + 5, headY - 5, 6, 8, '#ffffff');
+    }
+
+    ctx.strokeStyle = eyeColor; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.arc(centerX, headY + 30, 10, Math.PI, Math.PI * 2, false); ctx.stroke();
+
+    ctx.globalAlpha = 0.8; 
+    drawSolidEllipse(centerX - eyeOffset, headY + 45, 8, 25, tearColor);
+    drawSolidEllipse(centerX + eyeOffset, headY + 45, 8, 25, tearColor);
+    ctx.globalAlpha = 1.0; 
+}
+
+
+// ==========================================
+// 6. ANIMAÇÃO WIKI
+// ==========================================
+function simulateWikiStream() {
+    const streamVisual = document.getElementById('wiki-stream-visual');
+    if (!streamVisual) return;
+    
+    streamVisual.innerHTML = '';
+    
+    for (let i = 0; i < 50; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'stream-bar';
+        bar.style.animationDelay = `${Math.random() * 2}s`;
+        bar.style.transform = `scaleY(${0.2 + Math.random() * 0.8})`;
+        streamVisual.appendChild(bar);
+    }
+}
+
+
+// ==========================================
+// INICIALIZAÇÃO GERAL
+// ==========================================
+window.onload = () => {
+    initBreach();
+    renderNode('start');
+    updateImplants(); 
+    updateVitalMonitor();
+    simulateWikiStream();
+};

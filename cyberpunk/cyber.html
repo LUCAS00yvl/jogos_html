@@ -59,6 +59,10 @@
 
         <!-- ABA DA WIKI (EXPANDIDA) -->
         <section id="wiki" class="tab-content">
+            <div class="wiki-data-stream">
+    <div class="stream-label">DADOS RECEBIDOS:</div>
+    <div id="wiki-stream-visual" class="stream-visual"></div>
+</div>
             <h2>Banco de Dados da Cidade</h2>
             <p>Acesse as informações das principais potências de Night City. Insira os dados visuais quando disponíveis.</p>
 
@@ -216,25 +220,61 @@
                     </div>
 
                     <div class="creator-section">
-                        <h3 class="section-title">4. Estilo e Ciberware</h3>
-                        <div class="button-group">
-                            <button class="tactical-btn active" onclick="setStyle(this, 'tactical')">Tactical</button>
-                            <button class="tactical-btn" onclick="setStyle(this, 'kitsch')">Kitsch</button>
-                            <button class="tactical-btn" onclick="setStyle(this, 'neomilitarismo')">Neo-Militar</button>
-                            <button class="tactical-btn" onclick="setStyle(this, 'pascivergio')">Pascivergio</button>
+                       <div class="creator-section">
+                        <h3 class="section-title">4. Inventário de Ciberware</h3>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            <div>
+                                <label class="attr-label" style="width:100%; display:block; margin-bottom:5px; color:var(--cp-text-muted);">Sist. Operacional</label>
+                                <select id="cw-os" class="cp-select" onchange="updateImplants()">
+                                    <option value="cyberdeck">Ciberdeque (Foco em Hacks)</option>
+                                    <option value="sandevistan">Zetatech Sandevistan (Câmera Lenta)</option>
+                                    <option value="berserk">Biodyne Berserk (Fúria e Força)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="attr-label" style="width:100%; display:block; margin-bottom:5px; color:var(--cp-text-muted);">Sist. Ocular</label>
+                                <select id="cw-eyes" class="cp-select" onchange="updateImplants()">
+                                    <option value="kiroshi_base">Óticas Kiroshi (Padrão)</option>
+                                    <option value="kiroshi_thermo">Kiroshi c/ Scanner Térmico</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="attr-label" style="width:100%; display:block; margin-bottom:5px; color:var(--cp-text-muted);">Braços</label>
+                                <select id="cw-arms" class="cp-select" onchange="updateImplants()">
+                                    <option value="org">Braços Orgânicos</option>
+                                    <option value="mantis">Lâminas Louva-a-Deus</option>
+                                    <option value="gorilla">Braços de Gorila</option>
+                                    <option value="monowire">Monofio</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="attr-label" style="width:100%; display:block; margin-bottom:5px; color:var(--cp-text-muted);">Pernas</label>
+                                <select id="cw-legs" class="cp-select" onchange="updateImplants()">
+                                    <option value="org">Pernas Orgânicas</option>
+                                    <option value="tendons">Tendões Reforçados (Pulo Duplo)</option>
+                                    <option value="ankles">Tornozelos Fortificados (Pulo Carregado)</option>
+                                </select>
+                            </div>
                         </div>
+                    </div>
                     </div>
                 </div>
 
                 <div class="visual-panel">
                     <h2 class="visual-title">Visual do Mercenário // Vista Prévia Atual</h2>
-                    
-                    <div class="main-v-view">
-                        <img id="main-v-image" src="" alt="Vista Prévia de V" class="main-v-image">
-                        <div class="visual-placeholder" style="border: 2px solid var(--cp-red);">
-                            V PRINCIPAL: [ feminimo // tactical ]<br>
-                            (Substitua o arquivo de imagem)
-                        </div>
+                    <div class="vital-monitor">
+    <span>LIFE:</span> <span id="vitals-heartrate" style="color: var(--cp-magenta);">---</span> BPM // 
+    <span>STABLE:</span> <span id="vitals-stability" style="color: var(--cp-yellow);">---</span> %
+</div>
+                    <div class="main-v-view" style="position: relative;">
+                        <!-- O Canvas onde a matemática acontece -->
+                        <canvas id="pipboy-canvas" width="300" height="400"></canvas>
+                        <!-- Efeito de tela CRT por cima do canvas -->
+                        <div class="scanlines"></div>
                     </div>
 
                     <div class="thumbnails-grid">
