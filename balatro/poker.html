@@ -6,22 +6,111 @@
     <title>Balatro Unbound - High Stakes</title>
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
     <style>
-        body { margin: 0; background: #020202; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        canvas { border-radius: 12px; border: 1px solid #333; }
+        @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
+
+        body { 
+            margin: 0; 
+            background: #000; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden;
+            font-family: 'Bungee', cursive;
+        }
+
+        #game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 9/16;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 0, 0, 0.25) 50%
+            ), linear-gradient(
+                90deg, 
+                rgba(255, 0, 0, 0.06), 
+                rgba(0, 255, 0, 0.02), 
+                rgba(0, 0, 255, 0.06)
+            );
+            z-index: 10;
+            background-size: 100% 3px, 4px 100%;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+        }
+
+        .vignette::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: radial-gradient(circle, rgba(0,0,0,0) 50%, rgba(0,0,0,0.8) 100%);
+            z-index: 11;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
-    <div id="game-container"></div>
+    <div id="game-wrapper" class="crt vignette">
+        <div id="game-container"></div>
+    </div>
+
     <script>
+        const COLORS = {
+            blue: 0x007fff,  // Chips
+            red: 0xfe5f55,   // Mult
+            green: 0x2a9d8f, // Play Button
+            darkRed: 0xe76f51, // Discard Button
+            cardBg: 0xffffff,
+            darkText: 0x222222,
+            gold: 0xffd700
+        };
+
+        const SWIRL_SHADER = `
+        precision mediump float;
+        uniform float time;
+        uniform vec2 resolution;
+        void main(void) {
+            vec2 uv = gl_FragCoord.xy / resolution.xy;
+            vec2 p = uv * 2.0 - 1.0;
+            p.x *= resolution.x / resolution.y;
+            float a = atan(p.y, p.x);
+            float r = length(p);
+            float v = sin(r * 8.0 - time * 1.5 + a * 2.0);
+            vec3 col = mix(vec3(0.05, 0.15, 0.3), vec3(0.1, 0.4, 0.2), v * 0.5 + 0.5);
+            gl_FragColor = vec4(col, 1.0);
+        }
+        `;
+
         class PokerEngine {
             static getRankLabel(rank) {
                 return { 11: 'J', 12: 'Q', 13: 'K', 14: 'A' }[rank] || rank.toString();
             }
 
+            static getCardValue(rank) {
+                if (rank >= 11 && rank <= 13) return 10;
+                if (rank === 14) return 11;
+                return rank;
+            }
+
             static evaluate(selectedCards) {
-                if (selectedCards.length === 0) return { name: "Nenhuma", mult: 0, chip: 0 };
+                if (selectedCards.length === 0) return { name: "High Card", mult: 1, chip: 5 };
                 
-                // ORDENAÇÃO E PREPARAÇÃO
                 const cards = [...selectedCards].sort((a, b) => a.rank - b.rank);
                 const ranks = cards.map(c => c.rank);
                 const suits = cards.map(c => c.suit);
@@ -29,7 +118,6 @@
                 const valCounts = Object.values(counts).sort((a, b) => b - a);
                 const uniqueRanks = [...new Set(ranks)];
 
-                // Flags de Combinação
                 const isFlush = new Set(suits).size === 1 && cards.length === 5;
                 let isStraight = false;
                 if (uniqueRanks.length === 5) {
@@ -37,18 +125,28 @@
                     if (!isStraight && ranks[4] === 14 && ranks[0] === 2 && ranks[3] === 5) isStraight = true;
                 }
 
-                // HIERARQUIA DE MÃOS (Da mais alta para a mais baixa)
-                // Se for um Flush, ele não vai cair no Par, porque o Flush é checado primeiro.
-                if (isFlush && isStraight) return { name: "Straight Flush", mult: 12, chip: 150 };
-                if (valCounts[0] === 4) return { name: "Quadra", mult: 10, chip: 100 };
-                if (valCounts[0] === 3 && valCounts[1] === 2) return { name: "Full House", mult: 7, chip: 70 };
-                if (isFlush) return { name: "Flush", mult: 5, chip: 50 };
-                if (isStraight) return { name: "Sequência", mult: 4, chip: 40 };
-                if (valCounts[0] === 3) return { name: "Trio", mult: 3, chip: 30 };
-                if (valCounts[0] === 2 && valCounts[1] === 2) return { name: "Dois Pares", mult: 2, chip: 20 };
-                if (valCounts[0] === 2) return { name: "Par", mult: 2, chip: 10 };
+                if (isFlush && isStraight) return { name: "Straight Flush", mult: 8, chip: 100 };
+                if (valCounts[0] === 4) return { name: "Four of a Kind", mult: 7, chip: 60 };
+                if (valCounts[0] === 3 && valCounts[1] === 2) return { name: "Full House", mult: 4, chip: 40 };
+                if (isFlush) return { name: "Flush", mult: 4, chip: 35 };
+                if (isStraight) return { name: "Straight", mult: 4, chip: 30 };
+                if (valCounts[0] === 3) return { name: "Three of a Kind", mult: 3, chip: 30 };
+                if (valCounts[0] === 2 && valCounts[1] === 2) return { name: "Two Pair", mult: 2, chip: 20 };
+                if (valCounts[0] === 2) return { name: "Pair", mult: 2, chip: 10 };
                 
-                return { name: "Carta Alta", mult: 1, chip: 5 };
+                return { name: "High Card", mult: 1, chip: 5 };
+            }
+        }
+
+        const delay = (scene, ms) => new Promise(res => scene.time.delayedCall(ms, res));
+
+        class BootScene extends Phaser.Scene {
+            constructor() { super('BootScene'); }
+            create() {
+                // Initialize custom shader
+                const baseShader = new Phaser.Display.BaseShader('SwirlShader', SWIRL_SHADER);
+                this.cache.shader.add('SwirlShader', baseShader);
+                this.scene.start('GameScene', { money: 0, currentBlind: 300, inventory: [] });
             }
         }
 
@@ -64,56 +162,118 @@
                 this.discardsLeft = 3;
                 this.hand = [];
                 this.selectedCards = [];
+                this.isAnimating = false;
             }
 
             create() {
                 const { width, height } = this.scale;
                 
-                // Background
-                const bg = this.add.graphics();
-                bg.fillGradientStyle(0x0a1a0a, 0x0a1a0a, 0x000000, 0x000000, 1);
-                bg.fillRect(0, 0, width, height);
-
-                // UI Text
-                this.scoreText = this.add.text(width/2, 70, `META: ${this.currentBlind}`, { fontSize: '32px', color: '#00ff44', fontStyle: 'bold' }).setOrigin(0.5);
-                this.currentScoreText = this.add.text(width/2, 110, `0`, { fontSize: '48px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+                // Background Shader
+                this.shader = this.add.shader('SwirlShader', width/2, height/2, width, height);
                 
-                this.statsText = this.add.text(width/2, height - 140, `MÃOS: ${this.handsLeft}  |  LIXO: ${this.discardsLeft}`, { fontSize: '16px', color: '#888' }).setOrigin(0.5);
-
+                // UI Overlay
+                this.createUI(width, height);
                 this.spawnHand();
 
-                // Botões
-                this.createButton(width/2 - 85, height - 70, "JOGAR", 0x27ae60, () => this.playHand());
-                this.createButton(width/2 + 85, height - 70, "LIXO", 0xc0392b, () => this.discardHand());
+                // Actions
+                this.btnPlay = this.createButton(width/2 - 90, height - 60, "PLAY", COLORS.green, () => this.playHand());
+                this.btnDiscard = this.createButton(width/2 + 90, height - 60, "DISCARD", COLORS.darkRed, () => this.discardHand());
+                
+                this.renderJokers(width);
+            }
+
+            update(time) {
+                if (this.shader) {
+                    this.shader.setUniform('time', time / 1000);
+                }
+            }
+
+            createUI(width, height) {
+                // Target Score Area
+                const targetBg = this.add.rectangle(width/2, 40, 240, 50, 0x000000, 0.6).setStrokeStyle(2, COLORS.red);
+                this.add.text(width/2 - 100, 40, "TARGET:", { fontSize: '18px', fontFamily: 'Bungee', color: '#fff' }).setOrigin(0, 0.5);
+                this.scoreText = this.add.text(width/2 + 100, 40, `${this.currentBlind}`, { fontSize: '24px', fontFamily: 'Bungee', color: '#fe5f55' }).setOrigin(1, 0.5);
+
+                // Current Hand Score Area
+                const currentBg = this.add.rectangle(width/2, 100, 200, 40, 0x000000, 0.8).setStrokeStyle(2, 0xffffff);
+                this.currentScoreText = this.add.text(width/2, 100, `${this.score}`, { fontSize: '28px', fontFamily: 'Bungee', color: '#ffffff' }).setOrigin(0.5);
+
+                // Live Chips X Mult Box
+                this.liveScoreCont = this.add.container(width/2, 160);
+                this.liveScoreBg = this.add.rectangle(0, 0, 220, 50, 0x111111, 0.9).setStrokeStyle(2, 0xffffff);
+                
+                this.liveChipsText = this.add.text(-50, 0, `0`, { fontSize: '28px', fontFamily: 'Bungee', color: '#007fff' }).setOrigin(0.5).setShadow(2, 2, '#000', 0, true, false);
+                this.liveCrossText = this.add.text(0, 0, `X`, { fontSize: '24px', fontFamily: 'Bungee', color: '#ffffff' }).setOrigin(0.5);
+                this.liveMultText = this.add.text(50, 0, `0`, { fontSize: '28px', fontFamily: 'Bungee', color: '#fe5f55' }).setOrigin(0.5).setShadow(2, 2, '#000', 0, true, false);
+                
+                this.liveScoreCont.add([this.liveScoreBg, this.liveChipsText, this.liveCrossText, this.liveMultText]);
+                this.liveScoreCont.setAlpha(0); // Hidden until hand is played
+
+                // Stats (Hands / Discards)
+                this.statsText = this.add.text(width/2, height - 120, `HANDS: ${this.handsLeft}    DISCARDS: ${this.discardsLeft}`, { fontSize: '16px', fontFamily: 'Bungee', color: '#ffffff' }).setOrigin(0.5);
             }
 
             createButton(x, y, label, color, callback) {
                 const container = this.add.container(x, y);
-                const bg = this.add.rectangle(0, 0, 140, 60, color).setInteractive({ useHandCursor: true });
-                const txt = this.add.text(0, 0, label, { fontSize: '20px', fontStyle: 'bold' }).setOrigin(0.5);
+                const bg = this.add.rectangle(0, 0, 160, 60, color).setInteractive({ useHandCursor: true });
+                bg.setStrokeStyle(3, 0xffffff);
+                
+                // Button juice
+                bg.on('pointerover', () => bg.setStrokeStyle(4, COLORS.gold));
+                bg.on('pointerout', () => bg.setStrokeStyle(3, 0xffffff));
+                bg.on('pointerdown', () => {
+                    bg.setScale(0.95);
+                    if (!this.isAnimating) callback();
+                });
+                bg.on('pointerup', () => bg.setScale(1));
+                
+                const txt = this.add.text(0, 0, label, { fontSize: '22px', fontFamily: 'Bungee', color: '#fff' }).setOrigin(0.5).setShadow(2, 2, '#000');
                 container.add([bg, txt]);
-                bg.on('pointerdown', callback);
+                return container;
             }
 
             spawnHand() {
                 const suits = ['♥', '♦', '♣', '♠'];
-                const colors = {'♥': '#ff4d4d', '♦': '#ff4d4d', '♣': '#ffffff', '♠': '#ffffff'};
+                const colors = {'♥': '#fe5f55', '♦': '#fe5f55', '♣': '#222222', '♠': '#222222'};
                 
                 while (this.hand.length < 8) {
                     const rank = Phaser.Math.Between(2, 14);
                     const suit = Phaser.Utils.Array.GetRandom(suits);
-                    const cardCont = this.add.container(0, 420);
+                    const startX = this.scale.width / 2;
+                    const cardCont = this.add.container(startX, this.scale.height + 100);
                     
-                    const cardBg = this.add.rectangle(0, 0, 40, 70, 0x1e272e).setStrokeStyle(2, 0x485460);
-                    const label = PokerEngine.getRankLabel(rank);
-                    const cardTxt = this.add.text(0, 0, `${label}\n${suit}`, { 
-                        color: colors[suit], fontSize: '20px', align: 'center', fontStyle: 'bold' 
-                    }).setOrigin(0.5);
+                    const cardBg = this.add.rectangle(0, 0, 56, 84, COLORS.cardBg).setStrokeStyle(2, 0x000000);
+                    cardBg.isCardBg = true; // Tag for effects
                     
-                    cardCont.add([cardBg, cardTxt]);
-                    cardCont.setInteractive(new Phaser.Geom.Rectangle(-20, -35, 40, 70), Phaser.Geom.Rectangle.Contains);
+                    const labelStr = PokerEngine.getRankLabel(rank);
+                    const colorHex = colors[suit];
+                    
+                    // Top Left Index
+                    const topTxt = this.add.text(-22, -36, `${labelStr}\n${suit}`, { 
+                        color: colorHex, fontSize: '14px', fontFamily: 'Arial', fontStyle: 'bold', align: 'center', lineSpacing: -5
+                    });
+                    
+                    // Center large icon
+                    const centerTxt = this.add.text(0, 0, suit, {
+                        color: colorHex, fontSize: '32px', fontFamily: 'Arial'
+                    }).setOrigin(0.5).setAlpha(0.3);
+
+                    cardCont.add([cardBg, topTxt, centerTxt]);
+                    cardCont.setSize(56, 84);
+                    cardCont.setInteractive({ useHandCursor: true });
                     
                     const cardData = { rank, suit, sprite: cardCont, selected: false };
+                    
+                    // Hover Juice
+                    cardCont.on('pointerover', () => {
+                        if (this.isAnimating) return;
+                        this.tweens.add({ targets: cardCont, scale: 1.1, duration: 100 });
+                    });
+                    cardCont.on('pointerout', () => {
+                        if (this.isAnimating) return;
+                        this.tweens.add({ targets: cardCont, scale: 1.0, duration: 100 });
+                    });
+                    
                     cardCont.on('pointerdown', () => this.toggleCard(cardData));
                     this.hand.push(cardData);
                 }
@@ -122,64 +282,202 @@
 
             sortAndArrange() {
                 this.hand.sort((a, b) => a.rank - b.rank);
+                const startY = this.scale.height - 220;
+                const cardWidth = 64;
+                const totalWidth = (this.hand.length - 1) * 44; // overlapping
+                const startX = (this.scale.width - totalWidth) / 2;
+
                 this.hand.forEach((card, i) => {
+                    card.baseX = startX + (i * 44);
+                    card.baseY = startY;
+                    card.sprite.setDepth(i);
                     this.tweens.add({
                         targets: card.sprite,
-                        x: 35 + (i * 41),
-                        duration: 300,
+                        x: card.baseX,
+                        y: card.selected ? card.baseY - 30 : card.baseY,
+                        angle: (i - this.hand.length/2) * 2, // Slight fan effect
+                        duration: 400,
                         ease: 'Back.easeOut'
                     });
                 });
             }
 
             toggleCard(card) {
+                if (this.isAnimating) return;
+                
                 if (!card.selected && this.selectedCards.length < 5) {
-                    card.sprite.y -= 40;
                     card.selected = true;
                     this.selectedCards.push(card);
+                    this.tweens.add({ targets: card.sprite, y: card.baseY - 30, duration: 150, ease: 'Sine.easeOut' });
                 } else if (card.selected) {
-                    card.sprite.y += 40;
                     card.selected = false;
                     this.selectedCards = this.selectedCards.filter(c => c !== card);
+                    this.tweens.add({ targets: card.sprite, y: card.baseY, duration: 150, ease: 'Sine.easeOut' });
                 }
             }
 
-            playHand() {
-                if (this.selectedCards.length === 0) return;
+            renderJokers(width) {
+                const startX = width / 2;
+                this.inventory.forEach((joker, i) => {
+                    const jCont = this.add.container(startX + ((i - this.inventory.length/2)* 60), 240);
+                    const jBg = this.add.rectangle(0, 0, 50, 75, 0x333333).setStrokeStyle(2, COLORS.gold);
+                    const jTxt = this.add.text(0, 0, "JOKER", { fontSize: '10px', fontFamily: 'Bungee', color: '#ffd700' }).setOrigin(0.5);
+                    const effTxt = this.add.text(0, 15, joker.mult ? `+${joker.mult} M` : `+${joker.chip} C`, { fontSize: '12px', fontFamily: 'Bungee', color: joker.mult ? '#fe5f55' : '#007fff' }).setOrigin(0.5);
+                    
+                    jCont.add([jBg, jTxt, effTxt]);
+                    joker.sprite = jCont;
+                });
+            }
+
+            async playHand() {
+                if (this.selectedCards.length === 0 || this.isAnimating) return;
+                this.isAnimating = true;
+                this.handsLeft--;
+                this.updateUI();
 
                 const result = PokerEngine.evaluate(this.selectedCards);
-                let mult = result.mult, chips = result.chip;
+                let currentChips = result.chip;
+                let currentMult = result.mult;
 
-                // Aplicar Modificadores (Jokers)
-                this.inventory.forEach(j => { mult += (j.mult || 0); chips += (j.chip || 0); });
+                // Show Live Score UI
+                this.liveScoreCont.setAlpha(1);
+                this.liveScoreCont.setScale(0.5);
+                this.tweens.add({ targets: this.liveScoreCont, scale: 1, duration: 300, ease: 'Back.easeOut' });
+                
+                this.liveChipsText.setText(`${currentChips}`);
+                this.liveMultText.setText(`${currentMult}`);
+                
+                // Show Hand Name
+                const handNameTxt = this.add.text(this.scale.width/2, this.scale.height/2, result.name, { fontSize: '36px', fontFamily: 'Bungee', color: '#fff' }).setOrigin(0.5).setShadow(3, 3, '#000', 0, true, false);
+                this.tweens.add({ targets: handNameTxt, y: handNameTxt.y - 40, alpha: 0, duration: 1500, ease: 'Power2' });
 
-                const total = mult * chips;
-                this.score += total;
-                this.handsLeft--;
+                await delay(this, 800);
 
-                this.animateScore(total, result.name);
+                // Score each card sequentially
+                for (let card of this.selectedCards) {
+                    const val = PokerEngine.getCardValue(card.rank);
+                    
+                    // Card Shake Effect
+                    this.tweens.add({ targets: card.sprite, angle: card.sprite.angle + 10, yoyo: true, duration: 100, repeat: 1 });
+                    
+                    // Spawn Chip Text flying up
+                    const floatTxt = this.add.text(card.sprite.x, card.sprite.y - 40, `+${val}`, { fontSize: '24px', fontFamily: 'Bungee', color: '#007fff' }).setOrigin(0.5).setShadow(2, 2, '#000');
+                    
+                    this.tweens.add({
+                        targets: floatTxt,
+                        x: this.liveScoreCont.x - 50,
+                        y: this.liveScoreCont.y,
+                        alpha: 0,
+                        duration: 500,
+                        ease: 'Cubic.easeIn',
+                        onComplete: () => {
+                            floatTxt.destroy();
+                            currentChips += val;
+                            this.liveChipsText.setText(`${currentChips}`);
+                            this.tweens.add({ targets: this.liveChipsText, scale: 1.5, yoyo: true, duration: 100 });
+                        }
+                    });
+                    
+                    await delay(this, 300);
+                }
 
+                await delay(this, 500);
+
+                // Apply Jokers
+                for (let joker of this.inventory) {
+                    this.tweens.add({ targets: joker.sprite, angle: joker.sprite.angle + 15, yoyo: true, duration: 100, repeat: 1 });
+                    
+                    const isMult = joker.mult !== undefined;
+                    const val = isMult ? joker.mult : joker.chip;
+                    const colorStr = isMult ? '#fe5f55' : '#007fff';
+                    const targetX = isMult ? this.liveScoreCont.x + 50 : this.liveScoreCont.x - 50;
+
+                    const floatTxt = this.add.text(joker.sprite.x, joker.sprite.y + 30, `+${val}`, { fontSize: '24px', fontFamily: 'Bungee', color: colorStr }).setOrigin(0.5).setShadow(2, 2, '#000');
+                    
+                    this.tweens.add({
+                        targets: floatTxt, x: targetX, y: this.liveScoreCont.y, alpha: 0, duration: 500, ease: 'Cubic.easeIn',
+                        onComplete: () => {
+                            floatTxt.destroy();
+                            if (isMult) {
+                                currentMult += val;
+                                this.liveMultText.setText(`${currentMult}`);
+                                this.tweens.add({ targets: this.liveMultText, scale: 1.5, yoyo: true, duration: 100 });
+                            } else {
+                                currentChips += val;
+                                this.liveChipsText.setText(`${currentChips}`);
+                                this.tweens.add({ targets: this.liveChipsText, scale: 1.5, yoyo: true, duration: 100 });
+                            }
+                        }
+                    });
+                    
+                    await delay(this, 400);
+                }
+
+                await delay(this, 500);
+
+                // Final Calc & Shake
+                const totalHandScore = currentChips * currentMult;
+                this.score += totalHandScore;
+                
+                // Hide live box
+                this.tweens.add({ targets: this.liveScoreCont, scale: 0, alpha: 0, duration: 300 });
+
+                // Big Score Pop
+                const finalScoreTxt = this.add.text(this.scale.width/2, this.scale.height/2 + 50, `+${totalHandScore}`, { fontSize: '48px', fontFamily: 'Bungee', color: '#ffea00' }).setOrigin(0.5).setShadow(4, 4, '#000');
+                
+                this.cameras.main.shake(300, 0.02);
+                this.updateUI();
+                
+                this.tweens.add({
+                    targets: finalScoreTxt,
+                    y: finalScoreTxt.y - 100,
+                    alpha: 0,
+                    duration: 1200,
+                    ease: 'Power2',
+                    onComplete: () => finalScoreTxt.destroy()
+                });
+
+                await delay(this, 1200);
+
+                // Cleanup and check state
+                this.clearSelected();
+                
                 if (this.score >= this.currentBlind) {
-                    this.time.delayedCall(1200, () => {
-                        this.scene.start('ShopScene', { money: this.money + 15, inventory: this.inventory, currentBlind: this.currentBlind + 300 });
-                    });
+                    this.cameras.main.fade(500, 0, 0, 0);
+                    await delay(this, 500);
+                    this.scene.start('ShopScene', { money: this.money + 15, inventory: this.inventory, currentBlind: this.currentBlind * 2 });
                 } else if (this.handsLeft <= 0) {
-                    this.time.delayedCall(1200, () => {
-                        alert("GAME OVER - Meta não atingida.");
-                        this.scene.start('GameScene', { money: 0 });
-                    });
+                    const overTxt = this.add.text(this.scale.width/2, this.scale.height/2, "GAME OVER", { fontSize: '48px', fontFamily: 'Bungee', color: '#fe5f55' }).setOrigin(0.5).setShadow(4, 4, '#000');
+                    await delay(this, 2000);
+                    this.scene.start('GameScene', { money: 0, currentBlind: 300, inventory: [] });
                 } else {
-                    this.clearSelected();
-                    this.updateUI();
+                    this.isAnimating = false;
                 }
             }
 
             discardHand() {
-                if (this.discardsLeft > 0 && this.selectedCards.length > 0) {
-                    this.discardsLeft--;
+                if (this.isAnimating || this.discardsLeft <= 0 || this.selectedCards.length === 0) return;
+                this.isAnimating = true;
+                
+                this.discardsLeft--;
+                this.updateUI();
+
+                // Burn animation
+                this.selectedCards.forEach(card => {
+                    this.tweens.add({
+                        targets: card.sprite,
+                        y: card.sprite.y + 100,
+                        alpha: 0,
+                        angle: Phaser.Math.Between(-45, 45),
+                        duration: 400,
+                        ease: 'Power2'
+                    });
+                });
+
+                this.time.delayedCall(400, () => {
                     this.clearSelected();
-                    this.updateUI();
-                }
+                    this.isAnimating = false;
+                });
             }
 
             clearSelected() {
@@ -193,22 +491,7 @@
 
             updateUI() {
                 this.currentScoreText.setText(`${this.score}`);
-                this.statsText.setText(`MÃOS: ${this.handsLeft}  |  LIXO: ${this.discardsLeft}`);
-            }
-
-            animateScore(val, name) {
-                const text = this.add.text(180, 250, `${name}\n+${val}`, { 
-                    fontSize: '40px', color: '#00ff44', fontStyle: 'bold', align: 'center', stroke: '#000', strokeThickness: 6 
-                }).setOrigin(0.5);
-                
-                this.tweens.add({
-                    targets: text,
-                    y: 180,
-                    alpha: 0,
-                    duration: 1200,
-                    onComplete: () => text.destroy()
-                });
-                this.updateUI();
+                this.statsText.setText(`HANDS: ${this.handsLeft}    DISCARDS: ${this.discardsLeft}`);
             }
         }
 
@@ -216,40 +499,84 @@
             constructor() { super('ShopScene'); }
             create(data) {
                 const { width, height } = this.scale;
-                this.add.rectangle(width/2, height/2, width, height, 0x111);
-                this.add.text(width/2, 100, "LOJA", { fontSize: '40px', color: '#ffd700' }).setOrigin(0.5);
-                this.add.text(width/2, 160, `Você tem $${data.money}`, { fontSize: '20px' }).setOrigin(0.5);
+                
+                // Shop background (Felt Green table)
+                const bg = this.add.graphics();
+                bg.fillGradientStyle(0x114a31, 0x114a31, 0x052114, 0x052114, 1);
+                bg.fillRect(0, 0, width, height);
+
+                this.add.text(width/2, 60, "SHOP", { fontSize: '42px', fontFamily: 'Bungee', color: '#ffd700' }).setOrigin(0.5).setShadow(3, 3, '#000');
+                this.add.text(width/2, 110, `CASH: $${data.money}`, { fontSize: '24px', fontFamily: 'Bungee', color: '#fff' }).setOrigin(0.5);
 
                 const items = [
-                    { name: "Coringa Mult", cost: 5, mult: 4, desc: "+4 Mult" },
-                    { name: "Coringa Chip", cost: 5, chip: 50, desc: "+50 Chips" }
+                    { name: "FOIL JOKER", cost: 5, mult: 5, desc: "+5 MULT", color: COLORS.red },
+                    { name: "CHUNKY JOKER", cost: 4, chip: 60, desc: "+60 CHIPS", color: COLORS.blue }
                 ];
 
                 items.forEach((item, i) => {
-                    const btn = this.add.rectangle(width/2, 280 + (i*90), 280, 70, 0x333).setInteractive();
-                    this.add.text(width/2, 280 + (i*90), `${item.name}\n${item.desc} - $${item.cost}`, { align: 'center' }).setOrigin(0.5);
-                    btn.on('pointerdown', () => {
+                    // Item Card Container
+                    const card = this.add.container(width/2, 230 + (i * 140));
+                    
+                    const cardBg = this.add.rectangle(0, 0, 260, 110, 0x222222).setStrokeStyle(3, item.color).setInteractive({ useHandCursor: true });
+                    const nameTxt = this.add.text(0, -25, item.name, { fontSize: '20px', fontFamily: 'Bungee', color: '#fff' }).setOrigin(0.5);
+                    const descTxt = this.add.text(0, 5, item.desc, { fontSize: '18px', fontFamily: 'Bungee', color: '#' + item.color.toString(16) }).setOrigin(0.5);
+                    const costTxt = this.add.text(0, 35, `COST: $${item.cost}`, { fontSize: '16px', fontFamily: 'Bungee', color: '#ffd700' }).setOrigin(0.5);
+                    
+                    card.add([cardBg, nameTxt, descTxt, costTxt]);
+
+                    // Hover
+                    cardBg.on('pointerover', () => this.tweens.add({ targets: card, scale: 1.05, duration: 150 }));
+                    cardBg.on('pointerout', () => this.tweens.add({ targets: card, scale: 1.0, duration: 150 }));
+                    
+                    // Purchase
+                    cardBg.on('pointerdown', () => {
                         if (data.money >= item.cost) {
                             data.money -= item.cost;
-                            data.inventory.push(item);
-                            this.scene.start('GameScene', data);
+                            data.inventory.push({ mult: item.mult, chip: item.chip });
+                            
+                            // Visual feedback
+                            cardBg.setFillStyle(0x444444);
+                            this.cameras.main.shake(100, 0.01);
+                            
+                            this.time.delayedCall(300, () => {
+                                this.scene.start('GameScene', data);
+                            });
+                        } else {
+                            // Shake on fail
+                            this.tweens.add({ targets: card, x: card.x + 10, yoyo: true, duration: 50, repeat: 3 });
                         }
                     });
                 });
 
-                const cont = this.add.rectangle(width/2, height - 100, 200, 50, 0x555).setInteractive();
-                this.add.text(width/2, height - 100, "PRÓXIMA RODADA").setOrigin(0.5);
-                cont.on('pointerdown', () => this.scene.start('GameScene', data));
+                // Next Round Button
+                const btnNext = this.add.container(width/2, height - 80);
+                const nextBg = this.add.rectangle(0, 0, 220, 60, COLORS.green).setStrokeStyle(3, 0xffffff).setInteractive({ useHandCursor: true });
+                const nextTxt = this.add.text(0, 0, "NEXT BLIND", { fontSize: '22px', fontFamily: 'Bungee', color: '#fff' }).setOrigin(0.5).setShadow(2, 2, '#000');
+                
+                btnNext.add([nextBg, nextTxt]);
+                
+                nextBg.on('pointerover', () => nextBg.setStrokeStyle(4, COLORS.gold));
+                nextBg.on('pointerout', () => nextBg.setStrokeStyle(3, 0xffffff));
+                nextBg.on('pointerdown', () => {
+                    btnNext.setScale(0.95);
+                    this.cameras.main.fade(300, 0, 0, 0);
+                    this.time.delayedCall(300, () => this.scene.start('GameScene', data));
+                });
+                nextBg.on('pointerup', () => btnNext.setScale(1));
             }
         }
 
         const config = {
-            type: Phaser.AUTO,
+            type: Phaser.WEBGL,
             width: 360,
             height: 640,
             parent: 'game-container',
-            scene: [GameScene, ShopScene],
-            scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }
+            transparent: true,
+            scene: [BootScene, GameScene, ShopScene],
+            scale: { 
+                mode: Phaser.Scale.FIT, 
+                autoCenter: Phaser.Scale.CENTER_BOTH 
+            }
         };
 
         new Phaser.Game(config);

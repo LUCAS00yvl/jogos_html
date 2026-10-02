@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minecraft 2D - Edição Sobrevivência</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Press Start 2P', monospace;
+            touch-action: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Botões Estilo Minecraft */
+        .mc-button {
+            background: linear-gradient(to bottom, #999999 0%, #707070 50%, #555555 51%, #3c3c3c 100%);
+            border: 3px solid #000;
+            border-top-color: #acacac;
+            border-left-color: #acacac;
+            border-right-color: #2b2b2b;
+            border-bottom-color: #2b2b2b;
+            color: #e0e0e0;
+            text-shadow: 2px 2px 0px #000;
+            font-size: 14px;
+            padding: 12px 20px;
+            cursor: pointer;
+            text-align: center;
+            box-shadow: inset 0 0 2px rgba(255,255,255,0.4);
+            transition: filter 0.05s;
+        }
+
+        .mc-button:hover {
+            background: linear-gradient(to bottom, #aaaaff 0%, #8888dd 50%, #6666bb 51%, #444499 100%);
+            color: #ffffa0;
+        }
+
+        .mc-button:active {
+            border-top-color: #2b2b2b;
+            border-left-color: #2b2b2b;
+            border-right-color: #acacac;
+            border-bottom-color: #acacac;
+        }
+
+        /* Slots do Inventário e Hotbar */
+        .mc-slot {
+            width: 44px;
+            height: 44px;
+            background: #8b8b8b;
+            border: 3px solid #373737;
+            border-top-color: #373737;
+            border-left-color: #373737;
+            border-right-color: #ffffff;
+            border-bottom-color: #ffffff;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .mc-slot.active {
+            outline: 4px solid #ffffff;
+            z-index: 10;
+        }
+
+        .mc-slot-count {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            color: #ffffff;
+            font-size: 10px;
+            text-shadow: 1px 1px 0px #000;
+            pointer-events: none;
+        }
+
+        /* Animação do Splash Text do Menu */
+        @keyframes splash-bounce {
+            0%, 100% { transform: scale(1) rotate(-15deg); }
+            50% { transform: scale(1.15) rotate(-15deg); }
+        }
+
+        .splash-text {
+            animation: splash-bounce 0.6s infinite ease-in-out;
+            color: #ffff00;
+            text-shadow: 2px 2px 0px #3f3f00;
+        }
+
+        /* Fundo de Terra do Menu / Inventário */
+        .dirt-bg {
+            background-color: #4d3319;
+            background-image: radial-gradient(#362412 15%, transparent 16%),
+                              radial-gradient(#362412 15%, transparent 16%);
+            background-size: 16px 16px;
+            background-position: 0 0, 8px 8px;
+        }
+
+        /* Estilo dos Corações e Fome */
+        .heart, .hunger {
+            width: 18px;
+            height: 18px;
+            display: inline-block;
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+
+        .heart-full { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><path fill="%23ff0000" d="M1 1h2v1h-2zM5 1h2v1h-2zM0 2h4v1h-4zM4 2h4v1h-4zM0 3h8v1h-8zM1 4h6v1h-6zM2 5h4v1h-4zM3 6h2v1h-2z"/><path fill="%23ffffff" d="M1 2h1v1h-1z"/></svg>'); }
+        .heart-empty { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><path fill="%23555555" d="M1 1h2v1h-2zM5 1h2v1h-2zM0 2h8v2h-8zM1 4h6v1h-6zM2 5h4v1h-4zM3 6h2v1h-2z"/></svg>'); }
+        
+        .hunger-full { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><path fill="%23d27d2d" d="M2 1h3v1h-3zM1 2h5v1h-5zM1 3h6v2h-6zM2 5h4v1h-4zM3 6h2v1h-2z"/><path fill="%23ffffff" d="M5 2h1v1h-1z"/></svg>'); }
+        .hunger-empty { background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><path fill="%23555555" d="M2 1h3v1h-3zM1 2h5v1h-5zM1 3h6v2h-6zM2 5h4v1h-4zM3 6h2v1h-2z"/></svg>'); }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Canvas Principal -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- MENU PRINCIPAL CARACTERÍSTICO -->
+        <div id="main-menu" class="absolute inset-0 dirt-bg flex flex-col justify-center items-center z-50">
+            <!-- Título Minecraft -->
+            <div class="relative mb-8 text-center">
+                <h1 class="text-4xl md:text-6xl font-bold text-gray-200 tracking-wider drop-shadow-[0_6px_0_rgba(0,0,0,0.8)]" style="text-shadow: 4px 4px 0 #3f3f3f, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 4px 4px 0 #000;">
+                    MINECRAFT <span class="text-green-500">2D</span>
+                </h1>
+                <div class="splash-text absolute -right-4 -bottom-4 text-xs md:text-sm font-bold whitespace-nowrap">
+                    Modo Sobrevivência Completo!
+                </div>
+            </div>
+
+            <!-- Botões do Menu -->
+            <div class="flex flex-col gap-3 w-72 md:w-96">
+                <button class="mc-button" onclick="startGame('survival')">Jogar Sobrevivência</button>
+                <button class="mc-button" onclick="startGame('creative')">Modo Criativo</button>
+                <button class="mc-button" onclick="toggleInstructions()">Instruções & Controles</button>
+            </div>
+
+            <div class="absolute bottom-4 text-xs text-gray-400">
+                Minecraft 2D JS Edition v2.0 - Desenvolvido para Web
+            </div>
+        </div>
+
+        <!-- MODAL DE INSTRUÇÕES -->
+        <div id="instructions-modal" class="hidden absolute inset-0 bg-black/80 flex justify-center items-center z-50 p-4">
+            <div class="dirt-bg p-6 border-4 border-gray-800 rounded max-w-lg text-white text-xs leading-relaxed space-y-3">
+                <h2 class="text-lg text-yellow-400 font-bold mb-3 text-center">CONTROLES & GUIA</h2>
+                <p><span class="text-green-400">A / D ou Setas:</span> Mover personagem</p>
+                <p><span class="text-green-400">W / Espaço / Seta Cima:</span> Pular</p>
+                <p><span class="text-green-400">Clique Esquerdo:</span> Quebrar bloco / Atacar Mobs</p>
+                <p><span class="text-green-400">Clique Direito:</span> Colocar bloco selecionado</p>
+                <p><span class="text-green-400">Tecla E:</span> Abrir/Fechar Inventário e Crafting</p>
+                <p><span class="text-green-400">Teclas 1 a 9:</span> Selecionar slot da Hotbar</p>
+                <p><span class="text-green-400">Sobrevivência:</span> Mobs surgem à noite. Construa abrigo e tochas para se proteger!</p>
+                <div class="text-center pt-3">
+                    <button class="mc-button px-6" onclick="toggleInstructions()">Fechar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- HUD DE SOBREVIVÊNCIA -->
+        <div id="hud" class="hidden absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-20">
+            <!-- Topo HUD: Info & Tempo -->
+            <div class="flex justify-between items-start text-white text-xs drop-shadow-[0_2px_0_rgba(0,0,0,0.8)]">
+                <div id="game-info" class="bg-black/40 p-2 rounded border border-gray-700/50">
+                    <div>Modo: <span id="hud-mode-text" class="text-yellow-400">Sobrevivência</span></div>
+                    <div>Hora: <span id="hud-time-text" class="text-cyan-300">Dia</span></div>
+                </div>
+                <button class="mc-button pointer-events-auto text-xs py-1 px-3" onclick="pauseGame()">Pausa (ESC)</button>
+            </div>
+
+            <!-- Bottom HUD: Vida, Fome e Hotbar -->
+            <div class="flex flex-col items-center gap-1 mb-2">
+                <!-- Status Bars (Vida e Fome) -->
+                <div id="status-bars" class="flex justify-between w-80 px-1 mb-1">
+                    <div id="hearts-container" class="flex gap-1"></div>
+                    <div id="hunger-container" class="flex gap-1"></div>
+                </div>
+
+                <!-- Hotbar -->
+                <div id="hotbar" class="flex bg-gray-900/80 p-1 border-2 border-gray-700 rounded pointer-events-auto gap-1">
+                    <!-- Gerado dinamicamente via JS -->
+                </div>
+                <div id="active-item-name" class="text-white text-xs h-4 drop-shadow-[0_2px_0_#000]"></div>
+            </div>
+        </div>
+
+        <!-- TELA DE INVENTÁRIO & CRAFTING (TECLA E) -->
+        <div id="inventory-screen" class="hidden absolute inset-0 bg-black/70 flex justify-center items-center z-40">
+            <div class="dirt-bg p-5 border-4 border-gray-900 rounded-lg shadow-2xl text-white w-[360px]">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-sm font-bold text-yellow-400">INVENTÁRIO & CRAFTING</span>
+                    <button class="text-red-400 font-bold text-sm" onclick="toggleInventory()">[X]</button>
+                </div>
+
+                <!-- Seção de Crafting Rápido -->
+                <div class="mb-4 bg-black/40 p-3 rounded border border-gray-700">
+                    <div class="text-xs mb-2 text-gray-300">Receitas Disponíveis:</div>
+                    <div id="crafting-recipes" class="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto pr-1">
+                        <!-- Botões de receitas gerados via JS -->
+                    </div>
+                </div>
+
+                <!-- Slots de Armazenamento Principal -->
+                <div class="text-xs mb-1 text-gray-300">Mochila:</div>
+                <div id="inventory-grid" class="grid grid-cols-9 gap-1 mb-3">
+                    <!-- Slots 9 a 26 -->
+                </div>
+
+                <!-- Hotbar no Inventário -->
+                <div class="text-xs mb-1 text-gray-300">Barra de Acesso:</div>
+                <div id="inventory-hotbar-grid" class="grid grid-cols-9 gap-1">
+                    <!-- Slots 0 a 8 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA DE PAUSA -->
+        <div id="pause-menu" class="hidden absolute inset-0 bg-black/70 flex flex-col justify-center items-center z-50 gap-3">
+            <h2 class="text-2xl text-white font-bold mb-4 drop-shadow-[0_3px_0_#000]">JOGO PAUSADO</h2>
+            <button class="mc-button w-64" onclick="resumeGame()">Continuar Jogo</button>
+            <button class="mc-button w-64" onclick="toggleInstructions()">Instruções</button>
+            <button class="mc-button w-64" onclick="quitToMenu()">Sair para o Menu</button>
+        </div>
+
+        <!-- TELA DE MORTE / GAME OVER -->
+        <div id="death-screen" class="hidden absolute inset-0 bg-red-950/85 flex flex-col justify-center items-center z-50 gap-4">
+            <h2 class="text-4xl text-red-600 font-bold drop-shadow-[0_4px_0_#000]">VOCÊ MORREU!</h2>
+            <p id="death-cause" class="text-sm text-gray-300 mb-2">Seus pontos de vida chegaram a zero.</p>
+            <button class="mc-button w-64" onclick="respawnPlayer()">Renascer</button>
+            <button class="mc-button w-64" onclick="quitToMenu()">Menu Principal</button>
+        </div>
+    </div>
+
+    <script>
+        // SINTETIZADOR DE ÁUDIO WEB AUDIO API (Efeitos sonoros autênticos)
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playBreak() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.1);
+            }
+
+            playPlace() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+
+            playHurt() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(60, this.ctx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.25);
+            }
+
+            playPickup() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+        }
+
+        const audio = new SoundEngine();
+
+        // DEFINIÇÃO DE BLOCOS E ITENS
+        const BLOCK_SIZE = 32;
+        const WORLD_WIDTH = 250;
+        const WORLD_HEIGHT = 100;
+
+        const BLOCKS = {
+            0: { id: 0, name: 'Ar', color: null, solid: false, transparent: true },
+            1: { id: 1, name: 'Bloco de Grama', color: '#5b8731', topColor: '#71aa34', solid: true, hardness: 1.2 },
+            2: { id: 2, name: 'Terra', color: '#7a5a3b', solid: true, hardness: 1.0 },
+            3: { id: 3, name: 'Pedra', color: '#7d7d7d', solid: true, hardness: 2.5, drop: 8 }, // Dropa pedregulho (id 8)
+            4: { id: 4, name: 'Tronco de Madeira', color: '#5c4033', sideColor: '#4a332a', solid: true, hardness: 1.5 },
+            5: { id: 5, name: 'Folhas', color: '#397a2b', solid: true, transparent: true, hardness: 0.3 },
+            6: { id: 6, name: 'Rocha Matriz', color: '#1a1a1a', solid: true, hardness: Infinity },
+            7: { id: 7, name: 'Tábua de Madeira', color: '#9c754d', solid: true, hardness: 1.2 },
+            8: { id: 8, name: 'Pedregulho', color: '#616161', solid: true, hardness: 2.0 },
+            9: { id: 9, name: 'Minério de Carvão', color: '#666666', spotColor: '#222222', solid: true, hardness: 2.5, dropItem: 'coal' },
+            10: { id: 10, name: 'Minério de Ferro', color: '#6a6a6a', spotColor: '#d8af93', solid: true, hardness: 3.0 },
+            11: { id: 11, name: 'Tocha', color: '#ffcc00', solid: false, transparent: true, light: 12 }
+        };
+
+        const ITEMS = {
+            'coal': { name: 'Carvão', color: '#222222' },
+            'raw_pork': { name: 'Carne de Porco Crua', color: '#ff9999', food: 4 },
+            'stick': { name: 'Vara de Madeira', color: '#8c6747' },
+            'wooden_pickaxe': { name: 'Picareta de Madeira', color: '#9c754d', toolPower: 2 },
+            'stone_pickaxe': { name: 'Picareta de Pedra', color: '#616161', toolPower: 4 },
+            'sword': { name: 'Espada de Pedra', color: '#7d7d7d', damage: 6 }
+        };
+
+        // RECEITAS DE CRAFTING
+        const CRAFTING_RECIPES = [
+            {
+                name: 'Tábuas (x4)',
+                inputs: [{ id: 4, count: 1 }],
+                output: { id: 7, count: 4 }
+            },
+            {
+                name: 'Vara de Madeira (x4)',
+                inputs: [{ id: 7, count: 2 }],
+                outputItem: { id: 'stick', count: 4 }
+            },
+            {
+                name: 'Tochas (x4)',
+                inputs: [{ id: 7, count: 1 }, { id: 'coal', count: 1 }],
+                output: { id: 11, count: 4 }
+            },
+            {
+                name: 'Picareta de Madeira',
+                inputs: [{ id: 7, count: 3 }, { id: 'stick', count: 2 }],
+                outputItem: { id: 'wooden_pickaxe', count: 1 }
+            },
+            {
+                name: 'Picareta de Pedra',
+                inputs: [{ id: 8, count: 3 }, { id: 'stick', count: 2 }],
+                outputItem: { id: 'stone_pickaxe', count: 1 }
+            },
+            {
+                name: 'Espada de Pedra',
+                inputs: [{ id: 8, count: 2 }, { id: 'stick', count: 1 }],
+                outputItem: { id: 'sword', count: 1 }
+            }
+        ];
+
+        // ESTADO GLOBAL DO JOGO
+        let gameState = 'MENU'; // MENU, PLAYING, PAUSED, DEAD
+        let gameMode = 'survival'; // survival ou creative
+        let world = [];
+        let lightMap = [];
+        let keys = {};
+        let mouse = { x: 0, y: 0, leftDown: false, rightDown: false, worldX: 0, worldY: 0 };
+        let camera = { x: 0, y: 0 };
+        let dayTime = 1000; // Ciclo 0 a 24000 (0-12000 Dia, 12000-24000 Noite)
+        
+        // Mobs e Itens no chão
+        let mobs = [];
+        let itemDrops = [];
+        let particles = [];
+
+        // INVENTÁRIO DO JOGADOR (36 Slots: 0-8 Hotbar, 9-35 Mochila)
+        let inventory = new Array(36).fill(null);
+        let selectedSlot = 0;
+
+        // ESTATÍSTICAS DO JOGADOR
+        const player = {
+            x: 0,
+            y: 0,
+            width: BLOCK_SIZE * 0.7,
+            height: BLOCK_SIZE * 1.8,
+            vx: 0,
+            vy: 0,
+            speed: 4.5,
+            jumpStrength: 8.5,
+            gravity: 0.4,
+            grounded: false,
+            health: 20, // 10 Corações
+            maxHealth: 20,
+            hunger: 20, // 10 Pernas de frango
+            hungerTimer: 0,
+            invulnerableTimer: 0,
+            color: '#3498db'
+        };
+
+        // GERAÇÃO PROCEDURAL DO MUNDO
+        function generateWorld() {
+            world = new Array(WORLD_HEIGHT).fill(0).map(() => new Array(WORLD_WIDTH).fill(0));
+            
+            // Perlin/Smooth noise simplificado para o relevo
+            let heights = [];
+            let h = WORLD_HEIGHT / 2.2;
+            for (let x = 0; x < WORLD_WIDTH; x++) {
+                if (x % 4 === 0) h += (Math.random() * 6 - 3);
+                h = Math.max(25, Math.min(WORLD_HEIGHT - 25, h));
+                heights[x] = Math.floor(h);
+            }
+
+            // Suavizar colinas
+            for (let x = 0; x < WORLD_WIDTH; x++) {
+                let sum = 0, count = 0;
+                for (let i = -3; i <= 3; i++) {
+                    if (x + i >= 0 && x + i < WORLD_WIDTH) {
+                        sum += heights[x + i];
+                        count++;
+                    }
+                }
+                let surfaceY = Math.floor(sum / count);
+
+                for (let y = 0; y < WORLD_HEIGHT; y++) {
+                    if (y === WORLD_HEIGHT - 1) {
+                        world[y][x] = 6; // Bedrock
+                    } else if (y > surfaceY + 5) {
+                        // Camada de Pedra com minérios aleatórios
+                        let rand = Math.random();
+                        if (rand < 0.04) world[y][x] = 9; // Carvão
+                        else if (rand < 0.02) world[y][x] = 10; // Ferro
+                        else world[y][x] = 3; // Pedra
+                    } else if (y > surfaceY) {
+                        world[y][x] = 2; // Terra
+                    } else if (y === surfaceY) {
+                        world[y][x] = 1; // Grama
+                        
+                        // Gerar árvores aleatórias
+                        if (x > 5 && x < WORLD_WIDTH - 5 && Math.random() < 0.1) {
+                            spawnTree(x, y - 1);
+                        }
+                    }
+                }
+            }
+        }
+
+        function spawnTree(x, baseY) {
+            let treeHeight = Math.floor(Math.random() * 2) + 4;
+            for (let i = 0; i < treeHeight; i++) {
+                if (baseY - i >= 0) world[baseY - i][x] = 4; // Tronco
+            }
+            let leafY = baseY - treeHeight;
+            for (let ly = -2; ly <= 1; ly++) {
+                for (let lx = -2; lx <= 2; lx++) {
+                    if (Math.abs(lx) === 2 && Math.abs(ly) === 2) continue;
+                    let cx = x + lx, cy = leafY + ly;
+                    if (cx >= 0 && cx < WORLD_WIDTH && cy >= 0 && cy < WORLD_HEIGHT) {
+                        if (world[cy][cx] === 0) world[cy][cx] = 5; // Folhas
+                    }
+                }
+            }
+        }
+
+        // LÓGICA DO JOGADOR & FÍSICA
+        function updatePlayer() {
+            if (gameState !== 'PLAYING') return;
+
+            // Movimento Horizontal
+            if (keys['a'] || keys['arrowleft']) player.vx = -player.speed;
+            else if (keys['d'] || keys['arrowright']) player.vx = player.speed;
+            else player.vx *= 0.7;
+
+            player.x += player.vx;
+            if (checkCollision(player.x, player.y)) {
+                if (player.vx > 0) player.x = Math.floor((player.x + player.width) / BLOCK_SIZE) * BLOCK_SIZE - player.width - 0.1;
+                else if (player.vx < 0) player.x = Math.floor(player.x / BLOCK_SIZE) * BLOCK_SIZE + BLOCK_SIZE + 0.1;
+                player.vx = 0;
+            }
+
+            // Pulo
+            if ((keys['w'] || keys['arrowup'] || keys[' ']) && player.grounded) {
+                player.vy = -player.jumpStrength;
+                player.grounded = false;
+                // Reduzir levemente a fome ao pular em modo sobrevivência
+                if (gameMode === 'survival') player.hunger = Math.max(0, player.hunger - 0.05);
+            }
+
+            // Gravidade
+            player.vy += player.gravity;
+            if (player.vy > 16) player.vy = 16;
+
+            player.y += player.vy;
+            player.grounded = false;
+
+            if (checkCollision(player.x, player.y)) {
+                if (player.vy > 0) {
+                    player.y = Math.floor((player.y + player.height) / BLOCK_SIZE) * BLOCK_SIZE - player.height - 0.1;
+                    player.grounded = true;
+                } else if (player.vy < 0) {
+                    player.y = Math.floor(player.y / BLOCK_SIZE) * BLOCK_SIZE + BLOCK_SIZE + 0.1;
+                }
+                player.vy = 0;
+            }
+
+            // Tempo de invulnerabilidade
+            if (player.invulnerableTimer > 0) player.invulnerableTimer--;
+
+            // Sistema de Fome e Regeneração (Modo Sobrevivência)
+            if (gameMode === 'survival') {
+                player.hungerTimer++;
+                if (player.hungerTimer > 300) { // A cada 5s reduz um pouco de fome
+                    player.hunger = Math.max(0, player.hunger - 0.5);
+                    player.hungerTimer = 0;
+                }
+
+                // Regeneração se fome > 17
+                if (player.hunger >= 17 && player.health < player.maxHealth && Math.random() < 0.02) {
+                    player.health = Math.min(player.maxHealth, player.health + 1);
+                    player.hunger -= 0.5;
+                }
+
+                // Dano por Inanição (Fome zero)
+                if (player.hunger <= 0 && Math.random() < 0.01) {
+                    damagePlayer(1, 'Fome');
+                }
+            }
+
+            // Queda no Vazio / Morte
+            if (player.y > WORLD_HEIGHT * BLOCK_SIZE) {
+                damagePlayer(100, 'Queda no Vazio');
+            }
+        }
+
+        function checkCollision(x, y) {
+            const left = x, right = x + player.width;
+            const top = y, bottom = y + player.height;
+
+            return isSolid(left, top) || isSolid(right, top) ||
+                   isSolid(left, bottom) || isSolid(right, bottom) ||
+                   isSolid(left, top + player.height / 2) || isSolid(right, top + player.height / 2);
+        }
+
+        function isSolid(x, y) {
+            let bx = Math.floor(x / BLOCK_SIZE);
+            let by = Math.floor(y / BLOCK_SIZE);
+            if (bx < 0 || bx >= WORLD_WIDTH || by < 0 || by >= WORLD_HEIGHT) return true;
+            return BLOCKS[world[by][bx]].solid;
+        }
+
+        function damagePlayer(amount, cause = 'Ataque') {
+            if (player.invulnerableTimer > 0 || gameMode === 'creative') return;
+            
+            player.health -= amount;
+            player.invulnerableTimer = 20; // 0.3s piscando
+            audio.playHurt();
+
+            if (player.health <= 0) {
+                player.health = 0;
+                gameState = 'DEAD';
+                document.getElementById('death-cause').innerText = `Causa da Morte: ${cause}`;
+                document.getElementById('death-screen').classList.remove('hidden');
+            }
+            updateHUD();
+        }
+
+        // SISTEMA DE MOBS (Zumbis e Porcos)
+        class Mob {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type; // 'zombie' ou 'pig'
+                this.width = type === 'zombie' ? BLOCK_SIZE * 0.7 : BLOCK_SIZE * 0.9;
+                this.height = type === 'zombie' ? BLOCK_SIZE * 1.8 : BLOCK_SIZE * 0.9;
+                this.vx = 0;
+                this.vy = 0;
+                this.health = type === 'zombie' ? 20 : 10;
+                this.grounded = false;
+                this.moveTimer = 0;
+            }
+
+            update() {
+                // IA do Zumbi (Persegue o jogador)
+                if (this.type === 'zombie') {
+                    let dx = (player.x + player.width/2) - (this.x + this.width/2);
+                    if (Math.abs(dx) < BLOCK_SIZE * 12) {
+                        this.vx = dx > 0 ? 1.8 : -1.8;
+                    } else {
+                        this.vx = 0;
+                    }
+
+                    // Atacar jogador no contato
+                    if (Math.abs(dx) < BLOCK_SIZE * 0.8 && Math.abs(player.y - this.y) < BLOCK_SIZE * 1.5) {
+                        damagePlayer(3, 'Zumbi');
+                    }
+
+                    // Queimar no Sol durante o dia
+                    if (dayTime < 12000 && Math.random() < 0.02) {
+                        this.health -= 1;
+                    }
+                } 
+                // IA do Porco (Anda aleatoriamente)
+                else if (this.type === 'pig') {
+                    this.moveTimer++;
+                    if (this.moveTimer > 120) {
+                        this.vx = (Math.random() - 0.5) * 2;
+                        this.moveTimer = 0;
+                    }
+                }
+
+                // Pulo de obstáculo
+                if (this.vx !== 0 && this.grounded && checkMobCollision(this.x + this.vx * 5, this.y, this)) {
+                    this.vy = -6.5;
+                }
+
+                // Gravidade e Posição
+                this.vy += 0.4;
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Colisão simples com chão
+                if (checkMobCollision(this.x, this.y + this.height, this)) {
+                    this.y = Math.floor((this.y + this.height) / BLOCK_SIZE) * BLOCK_SIZE - this.height;
+                    this.vy = 0;
+                    this.grounded = true;
+                }
+            }
+
+            draw(ctx) {
+                let sx = this.x - camera.x;
+                let sy = this.y - camera.y;
+
+                if (this.type === 'zombie') {
+                    ctx.fillStyle = '#2e7d32'; // Pele verde zumbi
+                    ctx.fillRect(sx, sy, this.width, this.height);
+                    ctx.fillStyle = '#1565c0'; // Roupa azul
+                    ctx.fillRect(sx, sy + this.height/2, this.width, this.height/2);
+                } else {
+                    ctx.fillStyle = '#f48fb1'; // Porco rosa
+                    ctx.fillRect(sx, sy, this.width, this.height);
+                    ctx.fillStyle = '#e91e63'; // Focinho
+                    ctx.fillRect(sx + 2, sy + 4, 6, 6);
+                }
+            }
+        }
+
+        function checkMobCollision(x, y, mob) {
+            let bx = Math.floor((x + mob.width/2) / BLOCK_SIZE);
+            let by = Math.floor((y + mob.height/2) / BLOCK_SIZE);
+            if (bx < 0 || bx >= WORLD_WIDTH || by < 0 || by >= WORLD_HEIGHT) return true;
+            return BLOCKS[world[by][bx]].solid;
+        }
+
+        function spawnMobs() {
+            if (mobs.length >= 10) return;
+
+            let rx = Math.floor(Math.random() * WORLD_WIDTH);
+            let ry = 0;
+            while (ry < WORLD_HEIGHT && world[ry][rx] === 0) ry++;
+
+            if (ry < WORLD_HEIGHT) {
+                // Noite: Zumbis. Dia: Porcos.
+                if (dayTime >= 12000 && Math.random() < 0.6) {
+                    mobs.push(new Mob(rx * BLOCK_SIZE, (ry - 2) * BLOCK_SIZE, 'zombie'));
+                } else if (dayTime < 12000 && Math.random() < 0.3) {
+                    mobs.push(new Mob(rx * BLOCK_SIZE, (ry - 1) * BLOCK_SIZE, 'pig'));
+                }
+            }
+        }
+
+        // ITEM DROPS NA TERRA (Coletáveis flutuantes)
+        class ItemDrop {
+            constructor(x, y, item) {
+                this.x = x;
+                this.y = y;
+                this.item = item; // { id: blockId ou string, count: 1 }
+                this.vy = -3;
+                this.bounce = Math.random() * Math.PI;
+            }
+
+            update() {
+                this.vy += 0.2;
+                this.y += this.vy;
+                this.bounce += 0.05;
+
+                // Colisão simples
+                let bx = Math.floor(this.x / BLOCK_SIZE);
+                let by = Math.floor((this.y + 12) / BLOCK_SIZE);
+                if (by >= 0 && by < WORLD_HEIGHT && world[by][bx] !== 0 && BLOCKS[world[by][bx]].solid) {
+                    this.y = by * BLOCK_SIZE - 12;
+                    this.vy = 0;
+                }
+
+                // Atração magnética para o jogador
+                let dist = Math.hypot((player.x + player.width/2) - this.x, (player.y + player.height/2) - this.y);
+                if (dist < BLOCK_SIZE * 2.5) {
+                    this.x += ((player.x + player.width/2) - this.x) * 0.15;
+                    this.y += ((player.y + player.height/2) - this.y) * 0.15;
+
+                    if (dist < BLOCK_SIZE * 0.8) {
+                        if (addItemToInventory(this.item)) {
+                            audio.playPickup();
+                            return true; // Removido do mundo
+                        }
+                    }
+                }
+                return false;
+            }
+
+            draw(ctx) {
+                let sx = this.x - camera.x;
+                let sy = this.y - camera.y + Math.sin(this.bounce) * 3;
+
+                ctx.fillStyle = BLOCKS[this.item.id]?.color || ITEMS[this.item.id]?.color || '#fff';
+                ctx.fillRect(sx - 6, sy - 6, 12, 12);
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(sx - 6, sy - 6, 12, 12);
+            }
+        }
+
+        // INVENTÁRIO & CRAFTING LOGIC
+        function addItemToInventory(item) {
+            // Tentar empilhar em slot existente
+            for (let i = 0; i < 36; i++) {
+                if (inventory[i] && inventory[i].id === item.id) {
+                    inventory[i].count += item.count;
+                    updateHUD();
+                    return true;
+                }
+            }
+            // Procurar primeiro slot vazio
+            for (let i = 0; i < 36; i++) {
+                if (!inventory[i]) {
+                    inventory[i] = { id: item.id, count: item.count };
+                    updateHUD();
+                    return true;
+                }
+            }
+            return false; // Inventário Cheio
+        }
+
+        function craftRecipe(recipe) {
+            // Verificação de materiais
+            for (let input of recipe.inputs) {
+                let countFound = 0;
+                for (let i = 0; i < 36; i++) {
+                    if (inventory[i] && inventory[i].id === input.id) {
+                        countFound += inventory[i].count;
+                    }
+                }
+                if (countFound < input.count) return; // Materiais insuficientes
+            }
+
+            // Consumir materiais
+            for (let input of recipe.inputs) {
+                let needed = input.count;
+                for (let i = 0; i < 36; i++) {
+                    if (inventory[i] && inventory[i].id === input.id) {
+                        let take = Math.min(needed, inventory[i].count);
+                        inventory[i].count -= take;
+                        needed -= take;
+                        if (inventory[i].count <= 0) inventory[i] = null;
+                        if (needed <= 0) break;
+                    }
+                }
+            }
+
+            // Adicionar Item Produzido
+            let out = recipe.output ? { ...recipe.output } : { ...recipe.outputItem };
+            addItemToInventory(out);
+            renderInventoryUI();
+        }
+
+        // INTERAÇÃO COM O MUNDO (Quebrar / Colocar Blocos e Atacar)
+        function interactWorld() {
+            if (gameState !== 'PLAYING') return;
+
+            let bx = Math.floor((mouse.x + camera.x) / BLOCK_SIZE);
+            let by = Math.floor((mouse.y + camera.y) / BLOCK_SIZE);
+
+            if (bx < 0 || bx >= WORLD_WIDTH || by < 0 || by >= WORLD_HEIGHT) return;
+
+            let dist = Math.hypot((player.x + player.width/2) - (bx * BLOCK_SIZE + BLOCK_SIZE/2),
+                                  (player.y + player.height/2) - (by * BLOCK_SIZE + BLOCK_SIZE/2));
+            if (dist > BLOCK_SIZE * 5) return; // Alcance máximo
+
+            // Clique Esquerdo (Quebrar Bloco ou Atacar Mob)
+            if (mouse.leftDown) {
+                // Atacar Mobs próximos
+                for (let i = mobs.length - 1; i >= 0; i--) {
+                    let m = mobs[i];
+                    if (Math.hypot(m.x - (mouse.x + camera.x), m.y - (mouse.y + camera.y)) < BLOCK_SIZE * 1.5) {
+                        let activeItem = inventory[selectedSlot];
+                        let dmg = activeItem && ITEMS[activeItem.id]?.damage ? ITEMS[activeItem.id].damage : 4;
+                        m.health -= dmg;
+                        audio.playHurt();
+
+                        if (m.health <= 0) {
+                            // Drop de Mob ao morrer
+                            if (m.type === 'pig') itemDrops.push(new ItemDrop(m.x, m.y, { id: 'raw_pork', count: 1 }));
+                            else itemDrops.push(new ItemDrop(m.x, m.y, { id: 'coal', count: 1 }));
+                            mobs.splice(i, 1);
+                        }
+                        mouse.leftDown = false;
+                        return;
+                    }
+                }
+
+                // Quebrar Bloco
+                let targetBlock = world[by][bx];
+                if (targetBlock !== 0 && targetBlock !== 6) { // Não quebra Ar ou Bedrock
+                    audio.playBreak();
+                    
+                    // Determinar Drop do Bloco
+                    let dropId = BLOCKS[targetBlock].drop || BLOCKS[targetBlock].dropItem || targetBlock;
+                    itemDrops.push(new ItemDrop(bx * BLOCK_SIZE + 16, by * BLOCK_SIZE + 16, { id: dropId, count: 1 }));
+
+                    world[by][bx] = 0; // Vira Ar
+                    mouse.leftDown = false;
+                }
+            }
+            // Clique Direito (Colocar Bloco ou Comer)
+            else if (mouse.rightDown) {
+                let activeItem = inventory[selectedSlot];
+                if (!activeItem) return;
+
+                // Comer Alimento
+                if (ITEMS[activeItem.id]?.food && player.hunger < 20) {
+                    player.hunger = Math.min(20, player.hunger + ITEMS[activeItem.id].food);
+                    activeItem.count--;
+                    if (activeItem.count <= 0) inventory[selectedSlot] = null;
+                    audio.playPickup();
+                    updateHUD();
+                    mouse.rightDown = false;
+                    return;
+                }
+
+                // Colocar Bloco se for tipo bloco
+                if (typeof activeItem.id === 'number' && world[by][bx] === 0) {
+                    // Prevenir colocar dentro do próprio jogador
+                    let pRect = { l: player.x, r: player.x + player.width, t: player.y, b: player.y + player.height };
+                    let bRect = { l: bx*BLOCK_SIZE, r: bx*BLOCK_SIZE + BLOCK_SIZE, t: by*BLOCK_SIZE, b: by*BLOCK_SIZE + BLOCK_SIZE };
+                    
+                    if (!(pRect.l >= bRect.r || pRect.r <= bRect.l || pRect.t >= bRect.b || pRect.b <= bRect.t)) {
+                        world[by][bx] = activeItem.id;
+                        audio.playPlace();
+
+                        if (gameMode === 'survival') {
+                            activeItem.count--;
+                            if (activeItem.count <= 0) inventory[selectedSlot] = null;
+                        }
+                        updateHUD();
+                    }
+                    mouse.rightDown = false;
+                }
+            }
+        }
+
+        // DESENHO E RENDERIZAÇÃO
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+
+        function render() {
+            // 1. Céu Dinâmico (Ciclo Dia/Noite)
+            let skyColor = '#87CEEB';
+            if (dayTime > 11000 && dayTime < 13000) skyColor = '#d35400'; // Por do Sol
+            else if (dayTime >= 13000 && dayTime < 23000) skyColor = '#0b0d1b'; // Noite escura
+            else if (dayTime >= 23000) skyColor = '#e67e22'; // Nascer do Sol
+
+            ctx.fillStyle = skyColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. Visibilidade da Câmera (Culling)
+            let startCol = Math.max(0, Math.floor(camera.x / BLOCK_SIZE));
+            let endCol = Math.min(WORLD_WIDTH, startCol + Math.ceil(canvas.width / BLOCK_SIZE) + 1);
+            let startRow = Math.max(0, Math.floor(camera.y / BLOCK_SIZE));
+            let endRow = Math.min(WORLD_HEIGHT, startRow + Math.ceil(canvas.height / BLOCK_SIZE) + 1);
+
+            // 3. Desenhar Terreno
+            for (let y = startRow; y < endRow; y++) {
+                for (let x = startCol; x < endCol; x++) {
+                    let tile = world[y][x];
+                    if (tile !== 0) {
+                        let sx = x * BLOCK_SIZE - camera.x;
+                        let sy = y * BLOCK_SIZE - camera.y;
+                        let def = BLOCKS[tile];
+
+                        ctx.fillStyle = def.color;
+                        ctx.fillRect(sx, sy, BLOCK_SIZE, BLOCK_SIZE);
+
+                        // Detalhes de textura
+                        if (def.topColor) {
+                            ctx.fillStyle = def.topColor;
+                            ctx.fillRect(sx, sy, BLOCK_SIZE, 8);
+                        } else if (def.spotColor) {
+                            ctx.fillStyle = def.spotColor;
+                            ctx.fillRect(sx + 8, sy + 8, 8, 8);
+                            ctx.fillRect(sx + 18, sy + 18, 6, 6);
+                        }
+                    }
+                }
+            }
+
+            // 4. Desenhar Item Drops
+            itemDrops.forEach(drop => drop.draw(ctx));
+
+            // 5. Desenhar Mobs
+            mobs.forEach(mob => mob.draw(ctx));
+
+            // 6. Desenhar Jogador
+            let px = player.x - camera.x;
+            let py = player.y - camera.y;
+
+            if (player.invulnerableTimer % 4 < 2) { // Piscar ao tomar dano
+                ctx.fillStyle = player.color;
+                ctx.fillRect(px, py, player.width, player.height);
+                // Cabeça
+                ctx.fillStyle = '#f1c40f';
+                ctx.fillRect(px, py, player.width, player.width);
+            }
+
+            // 7. Camada de Iluminação e Escuridão Noturna
+            if (dayTime >= 12000 && dayTime < 24000) {
+                let darkAlpha = dayTime > 13000 && dayTime < 23000 ? 0.85 : 0.4;
+                
+                ctx.save();
+                ctx.fillStyle = `rgba(5, 5, 15, ${darkAlpha})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Recorte de Luz do Jogador e Tochas próximas (Luz Radial)
+                ctx.globalCompositeOperation = 'destination-out';
+                
+                // Luz ao redor do Jogador
+                let pGlow = ctx.createRadialGradient(px + player.width/2, py + player.height/2, 10, px + player.width/2, py + player.height/2, 120);
+                pGlow.addColorStop(0, 'rgba(0,0,0,1)');
+                pGlow.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = pGlow;
+                ctx.beginPath();
+                ctx.arc(px + player.width/2, py + player.height/2, 120, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Luz de Tochas no Mundo
+                for (let y = startRow; y < endRow; y++) {
+                    for (let x = startCol; x < endCol; x++) {
+                        if (world[y][x] === 11) { // Id da Tocha
+                            let tx = x * BLOCK_SIZE - camera.x + 16;
+                            let ty = y * BLOCK_SIZE - camera.y + 16;
+                            let torchGlow = ctx.createRadialGradient(tx, ty, 5, tx, ty, 150);
+                            torchGlow.addColorStop(0, 'rgba(0,0,0,1)');
+                            torchGlow.addColorStop(1, 'rgba(0,0,0,0)');
+                            ctx.fillStyle = torchGlow;
+                            ctx.beginPath();
+                            ctx.arc(tx, ty, 150, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+                ctx.restore();
+            }
+
+            // 8. Highlight do Bloco Apontado pelo Mouse
+            let hbx = Math.floor((mouse.x + camera.x) / BLOCK_SIZE);
+            let hby = Math.floor((mouse.y + camera.y) / BLOCK_SIZE);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(hbx * BLOCK_SIZE - camera.x, hby * BLOCK_SIZE - camera.y, BLOCK_SIZE, BLOCK_SIZE);
+        }
+
+        // ATUALIZAÇÃO DA INTERFACE (HUD & INVENTÁRIO)
+        function updateHUD() {
+            // Atualizar Corações
+            const heartsContainer = document.getElementById('hearts-container');
+            heartsContainer.innerHTML = '';
+            for (let i = 0; i < 10; i++) {
+                let heart = document.createElement('div');
+                heart.className = `heart ${i * 2 < player.health ? 'heart-full' : 'heart-empty'}`;
+                heartsContainer.appendChild(heart);
+            }
+
+            // Atualizar Fome
+            const hungerContainer = document.getElementById('hunger-container');
+            hungerContainer.innerHTML = '';
+            for (let i = 0; i < 10; i++) {
+                let h = document.createElement('div');
+                h.className = `hunger ${i * 2 < player.hunger ? 'hunger-full' : 'hunger-empty'}`;
+                hungerContainer.appendChild(h);
+            }
+
+            // Renderizar Hotbar
+            const hotbar = document.getElementById('hotbar');
+            hotbar.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                let slot = document.createElement('div');
+                slot.className = `mc-slot ${i === selectedSlot ? 'active' : ''}`;
+                
+                let item = inventory[i];
+                if (item) {
+                    let color = BLOCKS[item.id]?.color || ITEMS[item.id]?.color || '#fff';
+                    slot.innerHTML = `<div style="width:22px;height:22px;background:${color};border:1px solid #000;"></div>`;
+                    if (item.count > 1) {
+                        slot.innerHTML += `<span class="mc-slot-count">${item.count}</span>`;
+                    }
+                }
+                slot.onclick = () => { selectedSlot = i; updateHUD(); };
+                hotbar.appendChild(slot);
+            }
+
+            // Nome do Item Ativo
+            let active = inventory[selectedSlot];
+            document.getElementById('active-item-name').innerText = active ? (BLOCKS[active.id]?.name || ITEMS[active.id]?.name) : '';
+
+            // Texto de Tempo
+            document.getElementById('hud-time-text').innerText = dayTime < 12000 ? 'Dia' : 'Noite';
+        }
+
+        function renderInventoryUI() {
+            // Mochila (Slots 9 a 35)
+            const grid = document.getElementById('inventory-grid');
+            grid.innerHTML = '';
+            for (let i = 9; i < 36; i++) {
+                grid.appendChild(createSlotElement(i));
+            }
+
+            // Hotbar no Modal (Slots 0 a 8)
+            const hbGrid = document.getElementById('inventory-hotbar-grid');
+            hbGrid.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                hbGrid.appendChild(createSlotElement(i));
+            }
+
+            // Lista de Receitas
+            const recipesDiv = document.getElementById('crafting-recipes');
+            recipesDiv.innerHTML = '';
+            CRAFTING_RECIPES.forEach(r => {
+                let btn = document.createElement('button');
+                btn.className = 'mc-button text-[10px] p-2 text-left w-full';
+                btn.innerText = r.name;
+                btn.onclick = () => craftRecipe(r);
+                recipesDiv.appendChild(btn);
+            });
+        }
+
+        function createSlotElement(index) {
+            let slot = document.createElement('div');
+            slot.className = 'mc-slot';
+            let item = inventory[index];
+
+            if (item) {
+                let color = BLOCKS[item.id]?.color || ITEMS[item.id]?.color || '#fff';
+                slot.innerHTML = `<div style="width:22px;height:22px;background:${color};border:1px solid #000;"></div>`;
+                if (item.count > 1) {
+                    slot.innerHTML += `<span class="mc-slot-count">${item.count}</span>`;
+                }
+            }
+            return slot;
+        }
+
+        // LOOP PRINCIPAL DO JOGO
+        function gameLoop() {
+            if (gameState === 'PLAYING') {
+                // Ciclo Dia/Noite (24000 Ticks = 1 Ciclo completo)
+                dayTime = (dayTime + 2) % 24000;
+
+                updatePlayer();
+                
+                // Spawn periódico de Mobs
+                if (Math.random() < 0.005) spawnMobs();
+
+                // Atualizar Mobs
+                mobs.forEach(mob => mob.update());
+
+                // Atualizar Item Drops
+                for (let i = itemDrops.length - 1; i >= 0; i--) {
+                    if (itemDrops[i].update()) itemDrops.splice(i, 1);
+                }
+
+                // Câmera Suave
+                camera.x += ((player.x + player.width/2 - canvas.width/2) - camera.x) * 0.1;
+                camera.y += ((player.y + player.height/2 - canvas.height/2) - camera.y) * 0.1;
+
+                interactWorld();
+                render();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // CONTROLADORES DE ESTADO E INICIALIZAÇÃO
+        function startGame(mode) {
+            audio.init();
+            gameMode = mode;
+            document.getElementById('hud-mode-text').innerText = mode === 'survival' ? 'Sobrevivência' : 'Criativo';
+            
+            generateWorld();
+
+            // Spawn do jogador no centro do mapa
+            player.x = (WORLD_WIDTH / 2) * BLOCK_SIZE;
+            let sy = 0;
+            while (sy < WORLD_HEIGHT && world[sy][WORLD_WIDTH / 2] === 0) sy++;
+            player.y = (sy - 2) * BLOCK_SIZE;
+            player.health = 20;
+            player.hunger = 20;
+
+            // Inventário Inicial de Teste
+            inventory.fill(null);
+            inventory[0] = { id: 1, count: 64 }; // Grama
+            inventory[1] = { id: 4, count: 16 }; // Madeira
+            inventory[2] = { id: 11, count: 12 }; // Tochas
+
+            gameState = 'PLAYING';
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            updateHUD();
+        }
+
+        function toggleInventory() {
+            if (gameState !== 'PLAYING' && gameState !== 'INVENTORY') return;
+
+            const invScreen = document.getElementById('inventory-screen');
+            if (gameState === 'PLAYING') {
+                gameState = 'INVENTORY';
+                renderInventoryUI();
+                invScreen.classList.remove('hidden');
+            } else {
+                gameState = 'PLAYING';
+                invScreen.classList.add('hidden');
+                updateHUD();
+            }
+        }
+
+        function pauseGame() {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                document.getElementById('pause-menu').classList.remove('hidden');
+            }
+        }
+
+        function resumeGame() {
+            if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                document.getElementById('pause-menu').classList.add('hidden');
+            }
+        }
+
+        function respawnPlayer() {
+            document.getElementById('death-screen').classList.add('hidden');
+            startGame(gameMode);
+        }
+
+        function quitToMenu() {
+            gameState = 'MENU';
+            document.getElementById('pause-menu').classList.add('hidden');
+            document.getElementById('death-screen').classList.add('hidden');
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+        }
+
+        function toggleInstructions() {
+            document.getElementById('instructions-modal').classList.toggle('hidden');
+        }
+
+        // EVENTOS DE ENTRADA (Teclado e Mouse)
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            ctx.imageSmoothingEnabled = false;
+        });
+
+        window.addEventListener('keydown', e => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key.toLowerCase() === 'e') toggleInventory();
+            if (e.key === 'Escape') {
+                if (gameState === 'INVENTORY') toggleInventory();
+                else if (gameState === 'PLAYING') pauseGame();
+                else if (gameState === 'PAUSED') resumeGame();
+            }
+            let num = parseInt(e.key);
+            if (num >= 1 && num <= 9) {
+                selectedSlot = num - 1;
+                updateHUD();
+            }
+        });
+
+        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+        canvas.addEventListener('mousemove', e => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        canvas.addEventListener('mousedown', e => {
+            if (e.button === 0) mouse.leftDown = true;
+            if (e.button === 2) mouse.rightDown = true;
+        });
+
+        canvas.addEventListener('mouseup', e => {
+            if (e.button === 0) mouse.leftDown = false;
+            if (e.button === 2) mouse.rightDown = false;
+        });
+
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Inicialização do Canvas
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        ctx.imageSmoothingEnabled = false;
+
+        // Iniciar Loop
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
