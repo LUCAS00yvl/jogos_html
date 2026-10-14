@@ -1,0 +1,229 @@
+* {
+    user-select: none;
+    -webkit-user-select: none;
+    box-sizing: border-box;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #0c0603;
+    font-family: 'Press Start 2P', monospace;
+    touch-action: none;
+}
+
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+canvas {
+    display: block;
+    image-rendering: pixelated;
+    width: 100%;
+    height: 100%;
+}
+
+/* Painel de Madeira Moldado */
+.sd-panel {
+    background-color: #b87333;
+    background-image: 
+        radial-gradient(#7c3f15 15%, transparent 16%),
+        linear-gradient(to bottom, #cf7a2b 0%, #8c4217 100%);
+    background-size: 16px 16px, 100% 100%;
+    border: 4px solid #2d1403;
+    border-radius: 10px;
+    box-shadow: inset 0 0 12px rgba(255, 220, 100, 0.25), 0 10px 20px rgba(0,0,0,0.85);
+}
+
+/* Botões Estilo Stardew */
+.sd-button {
+    background: linear-gradient(to bottom, #ffe3ab 0%, #e39d42 40%, #b85b14 100%);
+    border: 3px solid #331300;
+    border-radius: 6px;
+    color: #2b0e00;
+    text-shadow: 1px 1px 0px #ffeed1;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 12px 20px;
+    cursor: pointer;
+    text-align: center;
+    box-shadow: 0 4px 0 #1c0a00, inset 0 2px 0 rgba(255,255,255,0.7);
+    transition: filter 0.1s, transform 0.05s;
+}
+
+.sd-button:hover {
+    filter: brightness(1.15);
+    color: #000000;
+}
+
+.sd-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #1c0a00;
+}
+
+/* Hotbar com Numeração */
+.sd-hotbar-container {
+    background: #87491d;
+    border: 4px solid #331502;
+    border-radius: 8px;
+    padding: 6px;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.7);
+}
+
+.sd-slot {
+    width: 50px;
+    height: 50px;
+    background: #e8bd87;
+    border: 3px solid #522c0d;
+    border-radius: 6px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.45);
+    transition: transform 0.1s, border-color 0.1s;
+}
+
+.sd-slot:hover {
+    transform: scale(1.05);
+}
+
+.sd-slot.active {
+    border-color: #ffffff;
+    outline: 3px solid #ffcc00;
+    background: #fce3b6;
+    z-index: 10;
+}
+
+.sd-slot-key {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    color: #4a2609;
+    font-size: 9px;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+.sd-slot-count {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    color: #ffffff;
+    font-size: 10px;
+    text-shadow: 1px 1px 0px #000, -1px -1px 0px #000;
+    pointer-events: none;
+}
+
+/* Widget do Relógio */
+.sd-clock-widget {
+    background: #fce3b6;
+    border: 4px solid #421e03;
+    border-radius: 8px;
+    color: #381a04;
+    padding: 10px 14px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.6);
+    min-width: 175px;
+}
+
+/* Barra de Energia */
+.sd-energy-frame {
+    width: 28px;
+    height: 160px;
+    background-color: #1f0f04;
+    border: 3px solid #421e03;
+    border-radius: 14px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.7);
+}
+
+.sd-energy-fill {
+    width: 100%;
+    background: linear-gradient(to top, #1ca822, #76f52a);
+    height: 100%;
+    transition: height 0.2s ease-out;
+}
+
+/* MINIJOGO DE PESCARIA (QTE OVERLAY) */
+#fishing-qte-container {
+    position: absolute;
+    left: 50%;
+    top: 45%;
+    transform: translate(-50%, -50%);
+    width: 48px;
+    height: 230px;
+    background: #2b1405;
+    border: 4px solid #572c0b;
+    border-radius: 10px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.85), inset 0 0 8px rgba(0,0,0,0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px;
+    z-index: 40;
+}
+
+#fishing-track {
+    position: relative;
+    width: 22px;
+    height: 100%;
+    background: #0f1924;
+    border: 2px solid #3d210a;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+#fishing-green-bar {
+    position: absolute;
+    width: 100%;
+    background: rgba(76, 217, 100, 0.88);
+    border: 1px solid #a8ffb3;
+    border-radius: 3px;
+    box-shadow: 0 0 10px #4cd964;
+    bottom: 0px;
+    height: 55px;
+}
+
+#fishing-fish-icon {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 1px;
+    font-size: 13px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    bottom: 0px;
+}
+
+#fishing-progress-wrapper {
+    position: absolute;
+    right: -20px;
+    top: 0;
+    width: 12px;
+    height: 100%;
+    background: #170a02;
+    border: 2px solid #4d2708;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+#fishing-progress-fill {
+    width: 100%;
+    background: linear-gradient(to top, #ff9800, #4caf50);
+    height: 30%;
+    transition: height 0.08s linear;
+}

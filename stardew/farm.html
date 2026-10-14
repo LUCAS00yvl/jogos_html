@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stardew Valley 2D - Versão Refinada</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="farm.css">
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- Canvas Principal -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- OVERLAY QTE DE PESCARIA -->
+        <div id="fishing-qte-container" class="hidden">
+            <div id="fishing-track">
+                <div id="fishing-green-bar"></div>
+                <div id="fishing-fish-icon">🐟</div>
+            </div>
+            <div id="fishing-progress-wrapper">
+                <div id="fishing-progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- MENU PRINCIPAL -->
+        <div id="main-menu" class="absolute inset-0 sd-panel flex flex-col justify-center items-center z-50">
+            <div class="relative mb-8 text-center">
+                <h1 class="text-4xl md:text-6xl font-bold text-amber-100 tracking-wider drop-shadow-[0_5px_0_rgba(0,0,0,0.9)]" style="text-shadow: 4px 4px 0 #3d1b04, -2px -2px 0 #000;">
+                    STARVALLEY <span class="text-yellow-400">2D</span>
+                </h1>
+                <p class="text-xs md:text-sm text-amber-200 mt-2 font-bold">Simulador de Fazenda em Pixel Art</p>
+            </div>
+
+            <div class="flex flex-col gap-3 w-72 md:w-80">
+                <button class="sd-button" onclick="startGame()">Iniciar Fazenda</button>
+                <button class="sd-button" onclick="toggleInstructions()">Como Jogar</button>
+            </div>
+        </div>
+
+        <!-- MODAL DE INSTRUÇÕES -->
+        <div id="instructions-modal" class="hidden absolute inset-0 bg-black/80 flex justify-center items-center z-50 p-4">
+            <div class="sd-panel p-6 max-w-lg text-amber-100 text-xs leading-relaxed space-y-3">
+                <h2 class="text-base text-yellow-300 font-bold mb-3 text-center">CONTROLES & PESCARIA</h2>
+                <p><span class="text-yellow-400">W, A, S, D / Setas:</span> Mover o Fazendeiro</p>
+                <p><span class="text-yellow-400">Shift (Segurar):</span> Correr</p>
+                <p><span class="text-yellow-400">Clique do Mouse / Espaço:</span> Usar ferramenta / Interagir</p>
+                <p><span class="text-yellow-400">Teclas 1 a 7 / Scroll:</span> Trocar Item da Hotbar</p>
+                <hr class="border-amber-900">
+                <h3 class="font-bold text-cyan-300">DICAS DE PESCA (QTE):</h3>
+                <p>1. Selecione a <span class="text-cyan-300">Vara de Pescar 🎣</span> e clique na água.</p>
+                <p>2. Ao surgir a exlamação <span class="text-yellow-300">FISGOU! (!)</span>, clique para iniciar o QTE.</p>
+                <p>3. **Mantenha o clique pressionado** para subir a barra verde e manter o peixe dentro dela até preencher a barra de progresso!</p>
+                <div class="text-center pt-2">
+                    <button class="sd-button px-6 py-2" onclick="toggleInstructions()">Entendido</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOJA DO PIERRE -->
+        <div id="shop-modal" class="hidden absolute inset-0 bg-black/75 flex justify-center items-center z-50 p-4">
+            <div class="sd-panel p-6 w-[420px] text-amber-100 text-xs space-y-4">
+                <div class="flex justify-between items-center border-b border-amber-900 pb-2">
+                    <h2 class="text-sm font-bold text-yellow-300">LOJA DO PIERRE - SEMENTES</h2>
+                    <button class="text-red-400 font-bold text-sm" onclick="toggleShop()">[X]</button>
+                </div>
+                <div id="shop-items-grid" class="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1"></div>
+                <div class="text-right text-yellow-300 font-bold pt-2 border-t border-amber-900">
+                    Seu Ouro: <span id="shop-gold-display" class="text-white">0g</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- HUD DA FAZENDA -->
+        <div id="hud" class="hidden absolute inset-0 pointer-events-none flex flex-col justify-between p-4 z-20">
+            <div class="flex justify-end w-full">
+                <div class="sd-clock-widget flex flex-col items-end text-xs space-y-1">
+                    <div class="flex items-center gap-2 font-bold text-amber-950">
+                        <span id="hud-weather-icon">☀️</span>
+                        <span id="hud-day">Seg. 1 - Primavera</span>
+                    </div>
+                    <div id="hud-time" class="text-sm font-bold text-amber-900">06:00 AM</div>
+                    <div class="flex items-center gap-1 text-amber-950 font-bold mt-1">
+                        <span class="text-yellow-600">🪙</span>
+                        <span id="hud-gold" class="text-amber-950">500g</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center">
+                <div class="sd-energy-frame">
+                    <div id="energy-bar-fill" class="sd-energy-fill"></div>
+                </div>
+                <span class="text-xs text-yellow-300 font-bold mt-1 drop-shadow-[0_2px_0_#000]">E</span>
+            </div>
+
+            <div class="flex flex-col items-center gap-2 mb-2 w-full">
+                <div id="active-item-name" class="text-amber-100 text-xs font-bold drop-shadow-[0_2px_0_#000]"></div>
+                <div id="hotbar" class="sd-hotbar-container flex pointer-events-auto gap-2"></div>
+            </div>
+        </div>
+
+        <!-- TRANSIÇÃO DE DIA -->
+        <div id="sleep-screen" class="hidden absolute inset-0 bg-black/95 flex flex-col justify-center items-center z-50 text-white space-y-4">
+            <h2 id="sleep-title" class="text-2xl font-bold text-amber-300">Você foi dormir...</h2>
+            <p id="sleep-summary" class="text-xs text-amber-100">Suas plantas cresceram e sua energia foi restaurada!</p>
+            <button class="sd-button mt-4" onclick="wakeUpNextDay()">Acordar para o Novo Dia</button>
+        </div>
+    </div>
+
+    <!-- Script Principal -->
+    <script src="farm.js"></script>
+</body>
+</html>
